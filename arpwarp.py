@@ -161,7 +161,7 @@ if __name__ == "__main__":
                         required=False)
     arguments = parser.parse_args()
 
-    print(f"[*] Setting up a new attacker...")
+    print(f"[*] Setting up attacker...")
     warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time)
     warper.start_attack()
 
