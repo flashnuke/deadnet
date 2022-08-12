@@ -18,9 +18,16 @@ conf.verb = 0
 #
 #   --------------------------------------------------------------------------------------------------------------------
 
+banner = """
+......_ ........______....... __........ ____....
+...../ \.. ____|    \ \ ...../ /___ ____|    \...
+..../   \.|  __|     \ \ /\ / /    |  __|     |..
+.../ /.\ \| |  |  __/.\      /     | |..|  __/...
+../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|......
+"""
 
 class ArpWarp:
-    _P_TIMEOUT = 2
+    _P_TIMEOUT = 0.5
 
     def __init__(self, iface):
         self.network_interface = iface
@@ -39,7 +46,7 @@ class ArpWarp:
         self.abort = False
 
     def generate_original_cache(self) -> Dict[str, str]:
-        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x")
+        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x, this might take 2-3 minutes...")
         arp_cache = dict()
 
         for host_p in self.subnet_range:
