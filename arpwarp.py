@@ -30,8 +30,10 @@ banner = """
 # TODO ipv4 only supported?
 # todo mac for gateway
 
+
 class ArpWarp:
     _P_TIMEOUT = 2
+    _P_RETRY = 10
 
     def __init__(self, iface, cidr, s_time, gateway):
         print(f"[*] Setting up attacker...")
@@ -88,7 +90,7 @@ class ArpWarp:
     @staticmethod
     def get_mac(ip_address):
         responses, unanswered = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip_address),
-                                    timeout=2, retry=10)
+                                    timeout=ArpWarp._P_TIMEOUT, retry=ArpWarp._P_RETRY)
         for s, r in responses:
             return r[Ether].src
         return None
