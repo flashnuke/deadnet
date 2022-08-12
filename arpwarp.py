@@ -1,3 +1,4 @@
+import argparse
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
@@ -132,10 +133,12 @@ class ArpWarp:
 
 
 if __name__ == "__main__":
-    conf.verb = 0
+    parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison attack',
+                                     usage=f"./{os.path.basename(__file__)} iface")
+    parser.add_argument("-i", "--network-interface", dest='iface', type=str, metavar=(""),
+                        help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')")
+    arguments = parser.parse_args()
 
-    network_interface = "gif0"
-    while True:
-        print(f"[*] Setting up a new attacker...")
-        warper = ArpWarp(network_interface)
-        warper.start_attack()
+    print(f"[*] Setting up a new attacker...")
+    warper = ArpWarp(arguments.iface)
+    warper.start_attack()
