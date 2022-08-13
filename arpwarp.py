@@ -12,6 +12,9 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 # TODO stats at first and then del lines output
 # TODO refresh ipv6 scans for new devices
 # TODO why only joannas iphone doesnt convert? (ans: fake mac? or: ans: diferent preflix)
+
+# TODO note: just realized apple is using different MAC addr for every interface?
+# SOLUTION: simply ping and wait for response then
 from scapy.all import *
 conf.verb = 0
 
@@ -29,8 +32,8 @@ conf.verb = 0
 #   --------------------------------------------------------------------------------------------------------------------
 
 banner = """
-......_ ........______....... __........ ____....
-...../ \.. ____|    \ \ ...../ /___ ____|    \...
+......_.........______........__.........____....
+...../ \...____|    \ \....../ /___.____|    \...
 ..../   \.|  __|     \ \ /\ / /    |  __|     |..
 .../ /.\ \| |  |  __/.\      /     | |..|  __/...
 ../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|......
