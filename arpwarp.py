@@ -10,6 +10,8 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 # TODO gateway auto
 # TODO test on ipv6 at home
 # TODO stats at first and then del lines output
+# TODO refresh ipv6 scans for new devices
+# TODO why only joannas iphone doesnt convert? (ans: fake mac? or: ans: diferent preflix)
 from scapy.all import *
 conf.verb = 0
 
