@@ -14,6 +14,8 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 # TODO why only joannas iphone doesnt convert? (ans: fake mac? or: ans: diferent preflix)
 
 # TODO note: just realized apple is using different MAC addr for every interface?
+
+# TODO NEWEST: require kali -> ping6 -> gather hosts -> get gateway -> fake NS packets
 # SOLUTION: simply ping and wait for response then
 from scapy.all import *
 conf.verb = 0
