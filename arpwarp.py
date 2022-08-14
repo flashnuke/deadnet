@@ -1,7 +1,6 @@
 import argparse
 import logging
 import ipaddress
-import nmap
 from typing import List
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
@@ -18,6 +17,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 # TODO NEWEST: require kali -> ping6 -> gather hosts -> get gateway -> fake NS packets
 # SOLUTION: simply ping and wait for response then
 from scapy.all import *
+
 conf.verb = 0
 
 #   --------------------------------------------------------------------------------------------------------------------
@@ -46,6 +46,7 @@ class ArpWarp:
     _P_TIMEOUT = 2
     _P_RETRY = 10
 
+    _IPV6_MULTIC_ADDR = "ff02::1"
     _IPV6_LL_PREF = "fe80"
     _IPV6_LL_PREFLEN = 64
 
@@ -75,28 +76,25 @@ class ArpWarp:
         print(f"[*] Generated {len(self.host_ipv6s)} existing IPV6 host targets")
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ip]
-        print(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 host targets for subnet {'.'.join(self.subnet_ipv4)}.x")
+        print(
+            f"[*] Generated {len(self.host_ipv4s)} possible IPV4 host targets for subnet {'.'.join(self.subnet_ipv4)}.x")
 
         self.abort = False
         self.get_all_hosts_ipv6()
 
     def get_all_hosts_ipv6(self) -> List[str]:
-        print("[*] Running NMAP for IPv6 -> MAC mapping, this may take a minute...")
-        ipv6_list = list()
-        nm = nmap.PortScanner()
-        nm.scan(hosts=self.subnet_ipv4_sr, arguments="-sP -n")
-        for host in nm.all_hosts():
-            if host != self.my_private_ip and host != self.gateway_ip:
-                try:
-                    addr = self.mac2ipv6(nm[host]['addresses']['mac'])
-                    ipv6_list.append(addr)
-                    print(nm[host]['addresses']['mac'])
-                    print(f"[+] Discovered IPV4 {host} -> IPV6 {addr}")
-                except KeyError:
-                    print(f"[!] Error getting MAC address for host {host}, try running with sudo")
-                    exit(-1)
-        print(nm.all_hosts())
-        return ipv6_list
+        IPv6_hosts = list()
+        print("[*] Pinging IPv6 subnet for hosts...")
+        ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
+                                               ArpWarp._IPV6_MULTIC_ADDR, "-c", "3"]).decode()
+        for line in ping_output.splitlines():
+            s_idx = line.find(ArpWarp._IPV6_LL_PREF)
+            e_idx = line.find(f"%{self.network_interface}")
+            if s_idx > 0 and e_idx > 0:
+                host = line[s_idx:e_idx]
+                if host not in IPv6_hosts:
+                    IPv6_hosts.append(line[s_idx:e_idx])
+        return IPv6_hosts
 
     def poison_arp(self):
         """
