@@ -58,9 +58,8 @@ class ArpWarp:
         print("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
         print("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
         print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
-        print("- spoof IPv6 ND" + str(spoof_ipv6nd).rjust(34))
-        print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
         print("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
+        print("- spoof IPv6 ND" + str(spoof_ipv6nd).rjust(34))
         print(DELIM)
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
