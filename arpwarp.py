@@ -17,10 +17,6 @@ conf.verb = 0
 
 
 class ArpWarp:
-    _P_TIMEOUT = 2
-    _P_RETRY = 10
-    _IPV6_REFHOSTS_INTV = 5
-
     def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6ra, ipv6_preflen):
         self.network_interface = iface
         self.arp_poison_interval = s_time
