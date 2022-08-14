@@ -142,9 +142,10 @@ class ArpWarp:
                     self.poison_ra()
                 if os_is_linux():
                     print((3 if self.spoof_ipv6nd else 2) * "\x1b[1A\x1b[2K")
-                print(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
                 if self.spoof_ipv6nd:
-                    print(f"[+] IPv6 last ping scan results" + f"{len(self.host_ipv6s)} hosts".rjust(18))
+                    print(f"[*] IPv6 ping" + f"{len(self.host_ipv6s)} hosts".rjust(36))
+                print(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
+
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
                 print(DELIM)
