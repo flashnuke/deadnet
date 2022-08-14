@@ -96,6 +96,9 @@ class ArpWarp:
             pass
         return ipv6_hosts
 
+    def refresh_ipv6_hosts(self):
+        self.ipv6_user_hosts.update(self.get_all_hosts_ipv6())
+
     def poison_arp(self):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
@@ -138,12 +141,10 @@ class ArpWarp:
                 self.poison_arp()
                 if self.spoof_ipv6nd:
                     if not loop_count % ArpWarp._IPV6_REFHOSTS_INTV:  # periodically refresh IPv6 hosts
-                        self.host_ipv6s = self.get_all_hosts_ipv6()
+                        self.refresh_ipv6_hosts()
                     self.poison_ra()
                 if os_is_linux():
-                    print((3 if self.spoof_ipv6nd else 2) * "\x1b[1A\x1b[2K")
-                if self.spoof_ipv6nd:
-                    print(f"[*] IPv6 ping" + f"{len(self.host_ipv6s)} hosts".rjust(36))
+                    print(2 * "\x1b[1A\x1b[2K")
                 print(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
 
                 time.sleep(self.arp_poison_interval)
