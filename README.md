@@ -1,4 +1,4 @@
-Make the network unresponsive using mass ARP poisoning
+Make a network unresponsive using ARP and ND poisoning
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
@@ -7,9 +7,8 @@ Furthermore, the gateway also receives an ARP packet from each host that contain
 </br></br>
 For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would poison the ND cache.
 
-# Usage
 
-## Requirements
+# Requirements
 ### OS
 This works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
@@ -19,6 +18,7 @@ The only difference would be in the output, which in LINUX OS would refresh the 
 ```python
 scapy~=2.4.5
 ```
+# Usage
 
 ## Poisoning ARP Cache (IPv4)
 
@@ -45,7 +45,9 @@ The default (and most commonly used) IPv6 preflen is `64`, in order to set a dif
 
 
 # Mitigation
-These kinds kind of attacks where ARP packets are spoofed can be mitigated by using a static ARP table.
+* Dynamic ARP Inspection
+* Encryption
+* Static ARP table
 
 # Disclaimer
 
