@@ -75,7 +75,7 @@ class ArpWarp:
     def get_all_hosts_ipv6(self) -> Dict[str, Union[None, str]]:
         ipv6_hosts = dict()
         ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
-                                               IPV6_MULTIC_ADDR, "-c", "3", "2>/dev/null"]).decode()
+                                               IPV6_MULTIC_ADDR, "-c", "3"], stderr=subprocess.DEVNULL).decode()
         for line in ping_output.splitlines():
             s_idx = line.find(IPV6_LL_PREF)
             e_idx = line.find(f"%{self.network_interface}")
