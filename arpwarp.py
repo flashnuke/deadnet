@@ -83,7 +83,6 @@ class ArpWarp:
         try:
             ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
                                                    IPV6_MULTIC_ADDR, "-c", "3"], stderr=subprocess.DEVNULL).decode()
-            print(ping_output)
             for line in ping_output.splitlines():
                 s_idx = line.find(IPV6_LL_PREF)
                 e_idx = line.find(f"%{self.network_interface}")
