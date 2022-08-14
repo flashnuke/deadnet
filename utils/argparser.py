@@ -9,8 +9,8 @@ def define_args():
                         help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')",
                         required=True)
 
-    parser.add_argument("-m", "--set-mask", dest='mask', type=int, metavar=(""), default=24,
-                        help="set the mask range (default -> /24 which means 0-256",
+    parser.add_argument("-m", "--set-cidrlen", dest='cidrlen', type=int, metavar=(""), default=24,
+                        help="set the cidr length (default -> /24 which means 0-256",
                         required=False)
 
     parser.add_argument("-s", "--sleep-interval", dest='s_time', type=int, metavar=(""), default=1,

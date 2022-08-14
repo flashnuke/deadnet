@@ -1,7 +1,7 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
-import ipaddress
+import ipaddress  # TODO req
 
 from scapy.all import *
 from utils import *
@@ -32,20 +32,20 @@ class ArpWarp:
     _P_RETRY = 10
     _IPV6_REFHOSTS_INTV = 5
 
-    def __init__(self, iface, cidr, s_time, gateway, spoof_ipv6nd, ipv6_preflen):
+    def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6nd, ipv6_preflen):
         self.network_interface = iface
         self.arp_poison_interval = s_time
         self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
 
         conf.iface = self.network_interface
-        self.cidr_ipv4 = cidr
+        self.cidrlen_ipv4 = cidrlen
 
         self.my_private_ip = get_if_addr(self.network_interface)
         self.my_mac = get_if_hwaddr(self.network_interface)
         self.my_private_ipv6 = mac2ipv6_ll(self.my_mac, IPV6_LL_PREF)
 
         self.subnet_ipv4 = self.my_private_ip.split(".")[:3]
-        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidr_ipv4}"
+        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = getmacbyip(self.gateway_ipv4)
@@ -162,6 +162,6 @@ if __name__ == "__main__":
     print(DELIM)
 
     arguments = define_args()
-    warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time, arguments.gateway,
+    warper = ArpWarp(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
                      arguments.spoof_ipv6nd, arguments.preflen)
     warper.start_attack()
