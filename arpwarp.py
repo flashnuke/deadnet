@@ -1,9 +1,10 @@
-import argparse
-import ipaddress
-from utils import *
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
+
+import ipaddress
+
 from scapy.all import *
+from utils import *
 
 conf.verb = 0
 
@@ -159,33 +160,8 @@ class ArpWarp:
 if __name__ == "__main__":
     print(f"\n{BANNER}\nWritten by @flashnuke")
     print(DELIM)
-    parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison attack',
-                                     usage=f"./{os.path.basename(__file__)} iface")
-    parser.add_argument("-i", "--network-interface", dest='iface', type=str, metavar=(""),
-                        help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')",
-                        required=True)
 
-    parser.add_argument("-m", "--set-mask", dest='mask', type=int, metavar=(""), default=24,
-                        help="set the mask range (default -> /24 which means 0-256",
-                        required=False)
-
-    parser.add_argument("-s", "--sleep-interval", dest='s_time', type=int, metavar=(""), default=1,
-                        help="set the sleep time between each arp poison attempt (default -> 1[sec])",
-                        required=False)
-
-    parser.add_argument("-g", "--set-gateway", dest='gateway', type=str, metavar=(""), default=None,
-                        help="set the gateway ip manually (defaults to x.x.x.1)",
-                        required=False)
-
-    parser.add_argument("-6", "--spoof-ipv6nd", dest='spoof_ipv6nd', action="store_true",
-                        default=False, help="spoof IPv6 router discovery (disabled by default)", required=False)
-
-    parser.add_argument("-pl", "--set-preflen", dest='preflen', type=int, metavar=(""), default=64,
-                        help="set the prefix length of the IPv6 subnet (default -> 64",
-                        required=False)
-
-    arguments = parser.parse_args()
-
+    arguments = define_args()
     warper = ArpWarp(arguments.iface, arguments.mask, arguments.s_time, arguments.gateway,
                      arguments.spoof_ipv6nd, arguments.preflen)
     warper.start_attack()
