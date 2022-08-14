@@ -48,6 +48,14 @@ This can be enabled by simply passing `-6, --spoof-ipv6nd`, for example:
 The default (and most commonly used) IPv6 preflen is `64`, in order to set a different one passing `-pl, --set-preflen` should do the trick.
 
 
+### Setting default hosts list
+It is possible to pass a default hosts list for the IPv6 ND spoof if the desires targets are not found by the ping scans by simply setting `-sh", --set-hosts` as the filepath to the list.
+
+# Notes
+* When using `IPv6 ND spoofing`, the hosts list is refreshed every once in a while by pinging the network.</br>Old hosts will remain, and new ones will be appended, so if a ping scan yields no hosts old ones will be targeted anyway.
+* Passing a default IPv4 hosts is not possible (unlike IPv6) since the IPv4 subnet will be poisoned entirely.
+
+
 # Mitigation
 * Dynamic ARP Inspection
 * Encryption
