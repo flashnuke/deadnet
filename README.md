@@ -1,11 +1,15 @@
-Make a network unresponsive using ARP and ND poisoning
+Make a network unresponsive using ARP and ND poisoning </br>
+![image](https://user-images.githubusercontent.com/59119926/184541147-8268eed5-e375-4915-8e59-ea1388522551.png)
+
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
 What this achieves is that the gateway (and any other destination the host tried to interact with inside the network) is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br></br>
-For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would poison the ND cache.
+For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would poison the ND cache.</br></br>
+An illustration of running the attacker from a phone with kali (nethunter): <br>
+![image](https://user-images.githubusercontent.com/59119926/184541502-1f58709b-b970-4ff4-aa25-9f783fff332f.png)
 
 
 # Requirements
