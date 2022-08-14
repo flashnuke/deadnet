@@ -32,6 +32,10 @@ class ArpWarp:
         conf.iface = self.network_interface
         self.cidrlen_ipv4 = cidrlen
 
+        self.spoof_ipv6nd = spoof_ipv6nd
+        if self.spoof_ipv6nd and os_is_windows():
+            raise Exception("IPv6 ND spoofing is currently not supported for windows OS")
+
         self.my_private_ip = get_if_addr(self.network_interface)
         self.my_mac = get_if_hwaddr(self.network_interface)
         self.my_private_ipv6 = mac2ipv6_ll(self.my_mac, IPV6_LL_PREF)
@@ -52,13 +56,12 @@ class ArpWarp:
         print("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
         print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
         print("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
-        print("- spoof IPv6 ND" + str(spoof_ipv6nd).rjust(34))
+        print("- spoof IPv6 ND" + str(self.spoof_ipv6nd).rjust(34))
         print(DELIM)
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ipv4]
         print(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 hosts")
-        self.spoof_ipv6nd = spoof_ipv6nd
         if self.spoof_ipv6nd:
             print(f"[*] IPv6 ND spoof is enabled, setting up...")
             print("[*] Pinging IPv6 subnet for hosts...")
@@ -116,7 +119,7 @@ class ArpWarp:
     def start_attack(self):
         loop_count = 0
         print(DELIM)
-        if "linux" in platform:
+        if os_is_linux():
             print("")
             print("")
         while not self.abort:
@@ -128,7 +131,7 @@ class ArpWarp:
                     if loop_count % ArpWarp._IPV6_REFHOSTS_INTV:  # periodically refresh IPv6 hosts
                         self.host_ipv6s = self.get_all_hosts_ipv6()
                     self.poison_ra()
-                if "linux" in platform:
+                if os_is_linux():
                     print(2 * "\x1b[1A\x1b[2K")
                 print(f"[+] attacking" + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(36))
                 time.sleep(self.arp_poison_interval)
