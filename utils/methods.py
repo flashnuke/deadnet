@@ -1,5 +1,5 @@
+import sys
 import time
-from sys import platform
 
 
 def get_ts_ms():
@@ -12,8 +12,8 @@ def mac2ipv6_ll(mac, pref):
 
 
 def os_is_linux():
-    return "linux" in platform
+    return "linux" in sys.platform
 
 
 def os_is_windows():
-    return platform.startswith('win')
+    return sys.platform.startswith('win')
