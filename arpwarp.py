@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import traceback
 import ipaddress
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
@@ -113,7 +114,7 @@ class ArpWarp:
                          ICMPv6ND_RA() / \
                          ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
                          ICMPv6NDOptMTU() / \
-                         ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=IPV6_LL_PREF)
+                         ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
             sendp(spoofed_ra, iface=self.network_interface)
 
     def start_attack(self):
@@ -138,6 +139,7 @@ class ArpWarp:
             except Exception as exc:
                 print(DELIM)
                 print(f"[!] Exception caught -> {exc}")
+                print(traceback.format_exc())
                 self.abort = True
             except KeyboardInterrupt:
                 print(DELIM)
