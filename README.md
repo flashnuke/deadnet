@@ -9,7 +9,7 @@ Furthermore, the gateway also receives an ARP packet from each host that contain
 </br></br>
 For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway.</br></br>
 An illustration of running the attacker from a phone with kali (nethunter): <br>
-![image](https://user-images.githubusercontent.com/59119926/184541502-1f58709b-b970-4ff4-aa25-9f783fff332f.png)
+<img width="268" alt="image" src="https://user-images.githubusercontent.com/59119926/184556919-e8b286b4-6207-4c13-b791-5ec2744927c1.png">
 
 
 # Requirements
