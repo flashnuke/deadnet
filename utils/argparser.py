@@ -21,15 +21,12 @@ def define_args():
                         help="set the gateway ip manually (defaults to x.x.x.1)",
                         required=False)
 
-    parser.add_argument("-6", "--spoof-ipv6nd", dest='spoof_ipv6nd', action="store_true",
-                        default=False, help="spoof IPv6 router discovery (disabled by default)", required=False)
+    parser.add_argument("-6", "--spoof_ipv6ra", dest='spoof_ipv6ra', action="store_true",
+                        default=False, help="spoof IPv6 ra packets, causing a dead router attack"
+                                            " (disabled by default)", required=False)
 
     parser.add_argument("-pl", "--set-preflen", dest='preflen', type=int, metavar=(""), default=64,
                         help="set the prefix length of the IPv6 subnet (default -> 64",
-                        required=False)
-
-    parser.add_argument("-sh", "--set-hosts", dest='ipv6hosts_filepath', type=str, metavar=(""), default=None,
-                        help="load a custom list of IPv6 hosts (in addition to the ping check)",
                         required=False)
 
     return parser.parse_args()
