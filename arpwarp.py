@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
+import ipaddress
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
-import ipaddress
-
-from sys import platform
 from scapy.all import *
 from utils import *
 
@@ -13,13 +11,10 @@ conf.verb = 0
 
 #   --------------------------------------------------------------------------------------------------------------------
 #
-#   Arp Warp attack - Continuously poison the ARP cache of all hosts on the connected network to make it unresponsive
+#   Arp Warp attack - Continuously poison the ARP + ND cache of all hosts on the connected network
+#   to make it unresponsive
 #
-#   Notes
-#       * 
-#
-#   Mitigation
-#       * Static ARP table
+#   Ⓒ by https://github.com/flashnuke Ⓒ
 #
 #   --------------------------------------------------------------------------------------------------------------------
 
