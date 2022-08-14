@@ -45,7 +45,9 @@ The default (and most commonly used) IPv6 preflen is `64`, in order to set a dif
 
 
 # Mitigation
-These kinds kind of attacks where ARP packets are spoofed can be mitigated by using a static ARP table.
+* Dynamic ARP Inspection
+* Encryption
+* Static ARP table
 
 # Disclaimer
 
