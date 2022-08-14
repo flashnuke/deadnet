@@ -46,7 +46,7 @@ class ArpWarp:
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = getmacbyip(self.gateway_ipv4)
-        self.gateway_ipv6 = "fe80::2090:f0ff:fe90:00b" # mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
+        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ipv4}")
