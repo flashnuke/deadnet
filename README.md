@@ -4,10 +4,10 @@ Make a network unresponsive using ARP and ND poisoning </br>
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
-What this achieves is that the gateway (and any other destination the host tried to interact with inside the network) is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
+The gateway (and any other destination the host tried to interact with inside the network) is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br></br>
-For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would poison the ND cache.</br></br>
+For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway.</br></br>
 An illustration of running the attacker from a phone with kali (nethunter): <br>
 ![image](https://user-images.githubusercontent.com/59119926/184541502-1f58709b-b970-4ff4-aa25-9f783fff332f.png)
 
@@ -39,21 +39,13 @@ In case something goes wrong and the gateway ip cannot be automatically set, a c
 
 ## Spoofing Router Advertisement Packets (IPv6)
 It is also possible to spoof RA packets in case the network uses IPv4 which does not implement an ARP mechanism. <br/>
-This can be enabled by simply passing `-6, --spoof-ipv6nd`, for example:
+This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 ```bash
 ./arpwarp.py -i eth0 --spoof-ipv6nd
 ```
 
 ### Setting preflen
 The default (and most commonly used) IPv6 preflen is `64`, in order to set a different one passing `-pl, --set-preflen` should do the trick.
-
-
-### Setting default hosts list
-It is possible to pass a default hosts list for the IPv6 ND spoof if the desires targets are not found by the ping scans by simply setting `-sh", --set-hosts` as the filepath to the list.
-
-# Notes
-* When using `IPv6 ND spoofing`, the hosts list is refreshed every once in a while by pinging the network.</br>Old hosts will remain, and new ones will be appended, so if a ping scan yields no hosts old ones will be targeted anyway.
-* Passing a default IPv4 hosts is not possible (unlike IPv6) since the IPv4 subnet will be poisoned entirely.
 
 
 # Mitigation
