@@ -77,6 +77,7 @@ class ArpWarp:
         ipv6_hosts = dict()
         ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
                                                IPV6_MULTIC_ADDR, "-c", "3"]).decode() # , stderr=subprocess.DEVNULL
+        print(ping_output)
         for line in ping_output.splitlines():
             s_idx = line.find(IPV6_LL_PREF)
             e_idx = line.find(f"%{self.network_interface}")
@@ -129,7 +130,7 @@ class ArpWarp:
                 now = get_ts_ms()
                 self.poison_arp()
                 if self.spoof_ipv6nd:
-                    if loop_count % ArpWarp._IPV6_REFHOSTS_INTV:  # periodically refresh IPv6 hosts
+                    if not loop_count % ArpWarp._IPV6_REFHOSTS_INTV:  # periodically refresh IPv6 hosts
                         self.host_ipv6s = self.get_all_hosts_ipv6()
                     self.poison_ra()
                 if os_is_linux():
