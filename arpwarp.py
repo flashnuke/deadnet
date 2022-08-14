@@ -45,7 +45,7 @@ class ArpWarp:
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = getmacbyip(self.gateway_ipv4)
-        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
+        self.gateway_ipv6 = "fe80::2090:f0ff:fe90:00b" # mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ipv4}")
@@ -83,8 +83,8 @@ class ArpWarp:
                 host = line[s_idx:e_idx]
                 if host not in ipv6_hosts:
                     ipv6_hosts[host] = in6_addrtomac(host)  # returns None on fail
-        print("@", ipv6_hosts)
-        print("!", self.gateway_ipv6)  # TODO check if this is in above
+        # print("@", ipv6_hosts)
+        # print("!", self.gateway_ipv6)  # TODO check if this is in above
         return ipv6_hosts
 
     def poison_arp(self):
