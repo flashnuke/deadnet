@@ -28,4 +28,8 @@ def define_args():
                         help="set the prefix length of the IPv6 subnet (default -> 64",
                         required=False)
 
+    parser.add_argument("-sh", "--set-hosts", dest='ipv6hosts_filepath', type=str, metavar=(""), default=None,
+                        help="load a custom list of IPv6 hosts (in addition to the ping check)",
+                        required=False)
+
     return parser.parse_args()

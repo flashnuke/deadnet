@@ -17,3 +17,11 @@ def os_is_linux():
 
 def os_is_windows():
     return platform.startswith('win')
+
+
+def load_hostlist(filepath):
+    try:
+        with open(filepath, "r") as hl:
+            return [host.strip("\n") for host in hl.readlines() if host.strip("\n")]
+    except Exception:
+        raise Exception("[!] Error loading hosts! Please verify path")

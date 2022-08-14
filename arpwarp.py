@@ -25,10 +25,11 @@ class ArpWarp:
     _P_RETRY = 10
     _IPV6_REFHOSTS_INTV = 5
 
-    def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6nd, ipv6_preflen):
+    def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6nd, ipv6_preflen, ipv6hosts_filepath):
         self.network_interface = iface
         self.arp_poison_interval = s_time
         self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
+        self.ipv6_user_hosts = self.load_user_ipv6_hosts(ipv6hosts_filepath)
 
         conf.iface = self.network_interface
         self.cidrlen_ipv4 = cidrlen
@@ -51,14 +52,7 @@ class ArpWarp:
         if not self.gateway_mac:
             raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ipv4}")
 
-        print("- net iface" + self.network_interface.rjust(38))
-        print("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
-        print("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
-        print("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
-        print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
-        print("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
-        print("- spoof IPv6 ND" + str(self.spoof_ipv6nd).rjust(34))
-        print(DELIM)
+        self.print_settings()
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ipv4]
@@ -73,20 +67,34 @@ class ArpWarp:
 
         self.abort = False
 
+    def print_settings(self):
+        print("- net iface" + self.network_interface.rjust(38))
+        print("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
+        print("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
+        print("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
+        print("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
+        print("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
+        print("- spoof IPv6 ND" + str(self.spoof_ipv6nd).rjust(34))
+        print(DELIM)
+
     def get_all_hosts_ipv6(self) -> Dict[str, Union[None, str]]:
         ipv6_hosts = dict()
-        ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
-                                               IPV6_MULTIC_ADDR, "-c", "3"]).decode() # , stderr=subprocess.DEVNULL
-        print(ping_output)
-        for line in ping_output.splitlines():
-            s_idx = line.find(IPV6_LL_PREF)
-            e_idx = line.find(f"%{self.network_interface}")
-            if s_idx > 0 and e_idx > 0:
-                host = line[s_idx:e_idx]
-                if host not in ipv6_hosts:
-                    ipv6_hosts[host] = in6_addrtomac(host)  # returns None on fail
-        # print("@", ipv6_hosts)
-        # print("!", self.gateway_ipv6)  # TODO check if this is in above
+        ipv6_hosts.update(self.ipv6_user_hosts)
+        try:
+            ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
+                                                   IPV6_MULTIC_ADDR, "-c", "3"], stderr=subprocess.DEVNULL).decode()
+            print(ping_output)
+            for line in ping_output.splitlines():
+                s_idx = line.find(IPV6_LL_PREF)
+                e_idx = line.find(f"%{self.network_interface}")
+                if s_idx > 0 and e_idx > 0:
+                    host = line[s_idx:e_idx]
+                    if host not in ipv6_hosts:
+                        ipv6_hosts[host] = in6_addrtomac(host)  # returns None on fail
+            # print("@", ipv6_hosts)
+            # print("!", self.gateway_ipv6)  # TODO check if this is in above
+        except Exception:
+            pass
         return ipv6_hosts
 
     def poison_arp(self):
@@ -135,7 +143,7 @@ class ArpWarp:
                     self.poison_ra()
                 if os_is_linux():
                     print(2 * "\x1b[1A\x1b[2K")
-                print(f"[+] attacking" + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(36))
+                print(f"[+] attacking" + f"cycle #{str(loop_count)} t {get_ts_ms() - now}[ms] ping6 {len(self.host_ipv6s)}".rjust(36))
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
                 print(DELIM)
@@ -154,6 +162,10 @@ class ArpWarp:
         except Exception:
             raise Exception(f"[!] Unable to IPv4 gateway, try setting manually by passing (-g, --set-gateway)...")
 
+    @staticmethod
+    def load_user_ipv6_hosts(filepath) -> Dict[str, str]:
+        return {lladdr: in6_addrtomac(lladdr) for lladdr in load_hostlist(filepath)} if filepath else dict()
+
 
 if __name__ == "__main__":
     print(f"\n{BANNER}\nWritten by @flashnuke")
@@ -161,5 +173,5 @@ if __name__ == "__main__":
 
     arguments = define_args()
     warper = ArpWarp(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
-                     arguments.spoof_ipv6nd, arguments.preflen)
+                     arguments.spoof_ipv6nd, arguments.preflen, arguments.ipv6hosts_filepath)
     warper.start_attack()
