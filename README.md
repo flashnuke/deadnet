@@ -1,5 +1,5 @@
-Make a network unresponsive using ARP and ND poisoning </br>
-![image](https://user-images.githubusercontent.com/59119926/184541147-8268eed5-e375-4915-8e59-ea1388522551.png)
+Make a network unresponsive by poisoning ARP and spoofing RA packets </br>
+<img width="301" alt="image" src="https://user-images.githubusercontent.com/59119926/184553797-ad7050a9-6455-45d1-b00f-b1ae5c90e8aa.png">
 
 
 # How it works
