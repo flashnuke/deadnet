@@ -4,17 +4,17 @@ Make a network unresponsive by poisoning ARP and spoofing RA packets </br>
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
-The gateway (and any other destination the host tried to interact with inside the network) is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
+The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br></br>
-For IPv6 networks, it is possible to send spoofed RA packets to every host on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway.</br></br>
-An illustration of running the attacker from a phone with kali (nethunter): <br>
+For IPv6 networks, this attack periodically sends a spoofed RA packet with the gateway's lladdr to the multicast address on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a [scapy](https://github.com/secdev/scapy) method is running on a separate thread in the background, sniffing traffic and immediately invalidates incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`). </br></br>
+An illustration of running the attacker from a nethunter (kali) phone: <br>
 <img width="268" alt="image" src="https://user-images.githubusercontent.com/59119926/184556919-e8b286b4-6207-4c13-b791-5ec2744927c1.png">
 
 
 # Requirements
 ### OS
-This works on every OS. </br>
+Works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
 
 ### 3rd libraries
@@ -26,7 +26,7 @@ scapy~=2.4.5
 
 ## Poisoning ARP Cache (IPv4)
 
-The network interface (can be derived from `ifconfig`) is a mandatory param and should always be passed, for example: 
+The network interface is a mandatory param and should always be passed, for example (`eth0` is the most commonly used in kali): 
 ```bash
 ./arpwarp.py -i eth0
 ```
@@ -38,7 +38,7 @@ The default cidr length is `24` since it is the one most commonly used, but can 
 In case something goes wrong and the gateway ip cannot be automatically set, a custom one can be set by defining the `-g, --set-gateway` argument.
 
 ## Spoofing Router Advertisement Packets (IPv6)
-It is also possible to spoof RA packets in case the network uses IPv4 which does not implement an ARP mechanism. <br/>
+As mentioned before, it is possible to spoof RA packets in case the network uses IPv6 which does not implement an ARP mechanism. <br/>
 This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 ```bash
 ./arpwarp.py -i eth0 --spoof-ipv6nd
@@ -47,11 +47,10 @@ This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 ### Setting preflen
 The default (and most commonly used) IPv6 preflen is `64`, in order to set a different one passing `-pl, --set-preflen` should do the trick.
 
-
-# Mitigation
-* Dynamic ARP Inspection
-* Encryption
-* Static ARP table
+# Notes
+### No buffe space avilable exception
+If the following exception occurs: ```Errno 105 No Buffer Space Available```
+simply increase the buffer size by running this command -> `sudo ifconfig "net_interface" txqueuelen 100000`
 
 # Disclaimer
 
