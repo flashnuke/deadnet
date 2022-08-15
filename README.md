@@ -5,11 +5,11 @@ The screenshots illustrate this attack running from a kali nethunter phone, and 
 <img align="right" img width="301" alt="image" src="https://user-images.githubusercontent.com/59119926/184553797-ad7050a9-6455-45d1-b00f-b1ae5c90e8aa.png">
 
 # How it works
-This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
+This attack continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
 The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br></br>
-For IPv6 networks, this attack periodically sends a spoofed RA packet with the gateway's lladdr to the multicast address on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a [scapy](https://github.com/secdev/scapy) method is running on a separate thread in the background, sniffing traffic and immediately invalidates incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`). </br></br>
+For IPv6 networks, this attack periodically sends a spoofed RA packet with the gateway's lladdr to the multicast address on the local link, which would signal the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a [scapy](https://github.com/secdev/scapy) method is running on a separate thread in the background, sniffing traffic. It immediately invalidates all incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`). </br></br>
 
 
 # Requirements
