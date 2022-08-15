@@ -8,11 +8,14 @@ from scapy.all import *
 from utils import *
 conf.verb = 0
 #   --------------------------------------------------------------------------------------------------------------------
-#
-#   ArpWarp attack -> network rekt
-#
-#   Ⓒ by https://github.com/flashnuke Ⓒ
-#
+#   ....................................................................................................................
+#   ......................................._.........______........__.........____......................................
+#   ....................................../ \...____|    \ \....../ /___.____|    \.....................................
+#   ...................................../   \.|  __|     \ \ /\ / /    |  __|     |....................................
+#   ..................................../ /.\ \| |  |  __/.\      /     | |..|  __/.....................................
+#   .................................../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|........................................
+#   ....................................................................................................................
+#   Ⓒ by https://github.com/flashnuke Ⓒ................................................................................
 #   --------------------------------------------------------------------------------------------------------------------
 
 
@@ -27,11 +30,9 @@ class ArpWarp:
 
         self.spoof_ipv6ra = spoof_ipv6ra
 
-        self.my_private_ip = get_if_addr(self.network_interface)
-        self.my_mac = get_if_hwaddr(self.network_interface)
-        self.my_private_ipv6 = mac2ipv6_ll(self.my_mac, IPV6_LL_PREF)
+        self.user_ipv4 = get_if_addr(self.network_interface)
 
-        self.subnet_ipv4 = self.my_private_ip.split(".")[:3]
+        self.subnet_ipv4 = self.user_ipv4.split(".")[:3]
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
@@ -43,15 +44,13 @@ class ArpWarp:
         self.print_settings()
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
-                           str(host_ip) != self.my_private_ip and str(host_ip) != self.gateway_ipv4]
+                           str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
         printf(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 hosts")
         if self.spoof_ipv6ra:
             printf(f"[*] IPv6 RA spoof is enabled, setting up...")
-            self.host_ipv6s = list()
             if not os_is_windows():
                 printf("[*] Pinging IPv6 subnet for hosts...")
-                self.host_ipv6s = self.get_all_hosts_ipv6()
-                printf(f"[+] Found {len(self.host_ipv6s)} IPv6 hosts during setup")
+                printf(f"[+] Found {len(self.get_all_hosts_ipv6())} IPv6 hosts during setup")
             else:
                 printf("[-] Windows does not support ping6, skipping...")
         else:
