@@ -1,6 +1,6 @@
-Make a network unresponsive by poisoning ARP and spoofing RA packets </br>
 <img width="301" alt="image" src="https://user-images.githubusercontent.com/59119926/184553797-ad7050a9-6455-45d1-b00f-b1ae5c90e8aa.png">
 
+Make a network unresponsive by poisoning ARP and spoofing RA packets </br>
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
@@ -13,11 +13,9 @@ An illustration of running the attacker from a nethunter (kali) phone: <br>
 
 
 # Requirements
-### OS
 Works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
 
-### 3rd libraries
 3rd party libraries can be installed by running the following command: `pip3 install -r requirements.txt` as they are listed inside the requirements file:
 ```python
 scapy~=2.4.5
@@ -31,10 +29,10 @@ The network interface is a mandatory param and should always be passed, for exam
 ./arpwarp.py -i eth0
 ```
 
-### Setting cidr length
+* Setting cidr length
 The default cidr length is `24` since it is the one most commonly used, but can be set by defining the `-m, --set-cidrlen` argument.
 
-### Setting custom gateway
+* Setting custom gateway
 In case something goes wrong and the gateway ip cannot be automatically set, a custom one can be set by defining the `-g, --set-gateway` argument.
 
 ## Spoofing Router Advertisement Packets (IPv6)
@@ -44,13 +42,14 @@ This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 ./arpwarp.py -i eth0 --spoof-ipv6nd
 ```
 
-### Setting preflen
+* Setting preflen
 The default (and most commonly used) IPv6 preflen is `64`, in order to set a different one passing `-pl, --set-preflen` should do the trick.
 
 # Notes
-### No buffe space avilable exception
+* No buffer space avilable exception
 If the following exception occurs: ```Errno 105 No Buffer Space Available```
-simply increase the buffer size by running this command -> `sudo ifconfig "net_interface" txqueuelen 100000`
+simply increase the buffer size by running this command -> `sudo ifconfig "net_interface" txqueuelen 100000`. </br>
+
 
 # Disclaimer
 
