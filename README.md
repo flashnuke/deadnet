@@ -1,6 +1,6 @@
 <img width="301" alt="image" src="https://user-images.githubusercontent.com/59119926/184553797-ad7050a9-6455-45d1-b00f-b1ae5c90e8aa.png">
 
-Make a network unresponsive by poisoning ARP and spoofing RA packets </br>
+Make a local network unresponsive by poisoning ARP and spoofing RA packets </br>
 
 # How it works
 This attack continously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
