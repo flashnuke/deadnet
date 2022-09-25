@@ -159,7 +159,7 @@ if __name__ == "__main__":
     print(DELIM)
 
     arguments = define_args()
-    _invalidate_print()  # after arg parsing
+    invalidate_print()  # after arg parsing
 
     warper = ArpWarp(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
                      arguments.spoof_ipv6ra, arguments.preflen)

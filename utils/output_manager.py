@@ -5,7 +5,7 @@ _DEVNULL = open(os.devnull, "w")
 _ORIG_STDOUT = sys.stdout
 
 
-def _invalidate_print():
+def invalidate_print():
     global _DEVNULL
     sys.stdout = _DEVNULL
 
