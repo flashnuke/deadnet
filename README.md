@@ -1,8 +1,8 @@
 # ArpWarp
-Make a local network unresponsive with 1 cmd </br>
+Make a local network unresponsive </br>
 
 # How it works
-This attack continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
+For IPv4, this attack continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
 The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br></br>
