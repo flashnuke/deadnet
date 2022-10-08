@@ -1,5 +1,5 @@
 # ArpWarp
-Make a local network unresponsive </br>
+Make a wireless network unresponsive </br>
 
 # How it works
 For IPv4, this attack continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
