@@ -44,9 +44,9 @@ This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 The default (and most commonly used) IPv6 preflen is `64`, in order to set a different one passing `-pl, --set-preflen` should do the trick.
 
 # Notes
-* No buffer space avilable exception
+* No buffer space available exception </br>
 If the following exception occurs: ```Errno 105 No Buffer Space Available```
-simply increase the buffer size by running this command -> `sudo ifconfig "net_interface" txqueuelen 100000`. </br>
+simply increase the buffer size by running this command -> `sudo ifconfig <net_interface> txqueuelen 100000` where `net_interface` is the network interface name. </br>
 
 # Disclaimer
 
