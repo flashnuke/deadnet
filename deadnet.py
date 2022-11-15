@@ -21,7 +21,7 @@ conf.verb = 0
 
 
 class DeadNet:
-    def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6ra, ipv6_preflen):
+    def __init__(self, iface, cidrlen, s_time, gateway, disable_ipv6, ipv6_preflen):
         self.network_interface = iface
         self.arp_poison_interval = s_time
         self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
@@ -29,7 +29,7 @@ class DeadNet:
         conf.iface = self.network_interface
         self.cidrlen_ipv4 = cidrlen
 
-        self.spoof_ipv6ra = spoof_ipv6ra
+        self.spoof_ipv6ra = not disable_ipv6
 
         self.user_ipv4 = get_if_addr(self.network_interface)
 
@@ -135,7 +135,8 @@ class DeadNet:
                     self.poison_ra()
                 if os_is_linux():
                     printf(2 * "\x1b[1A\x1b[2K")
-                printf(f"{GREEN}[+]{WHITE} attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
+                printf(f"{GREEN}[+]{WHITE} attacking..." + f"cycle #{str(loop_count)}"
+                                                           f" duration {get_ts_ms() - now}[ms]".rjust(33))
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
                 printf(DELIM)
@@ -152,7 +153,8 @@ class DeadNet:
         try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
-            raise Exception(f"[!] Unable to IPv4 gateway, try setting manually by passing (-g, --set-gateway)...")
+            raise Exception(f"{RED}[!]{WHITE} Unable to IPv4 gateway, try setting manually"
+                            f" by passing (-g, --set-gateway)...")
 
 
 if __name__ == "__main__":
@@ -163,5 +165,5 @@ if __name__ == "__main__":
     invalidate_print()  # after arg parsing
 
     attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
-                       arguments.spoof_ipv6ra, arguments.preflen)
+                       arguments.disable_ipv6, arguments.preflen)
     attacker.start_attack()

@@ -36,10 +36,10 @@ The default cidr length is `24` since it is the one most commonly used, but can 
 In case something goes wrong and the gateway ip cannot be automatically set, a custom one can be set by defining the `-g, --set-gateway` argument.
 
 ## Spoofing Router Advertisement Packets (IPv6)
-As mentioned before, it is possible to spoof RA packets in case the network uses IPv6 which does not implement an ARP mechanism. <br/>
-This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
+As mentioned before, it is possible to spoof RA packets in case the network supports IPv6. <br/>
+This attack is enabled automatically, and can be disabled by passing `-6, --disable-ipv6`, for example:
 ```bash
-./deadnet.py -i eth0 --spoof-ipv6nd
+./deadnet.py -i eth0 --disable-ipv6
 ```
 
 * Setting preflen

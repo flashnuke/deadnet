@@ -25,8 +25,8 @@ def define_args():
                         help="set the gateway ip manually (defaults to x.x.x.1)",
                         required=False)
 
-    parser.add_argument("-6", "--spoof_ipv6ra", dest='spoof_ipv6ra', action="store_true",
-                        default=True, help="spoof IPv6 ra packets, causing a dead router attack"
+    parser.add_argument("-6", "--disable-ipv6", dest='disable_ipv6', action="store_true",
+                        default=False, help="disable IPv6 dead router attack"
                                            " (enabled by default)", required=False)
 
     parser.add_argument("-pl", "--set-preflen", dest='preflen', type=int, metavar=(""), default=_DEF_PREFLEN,
