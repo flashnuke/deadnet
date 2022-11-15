@@ -1,3 +1,6 @@
+![image](https://user-images.githubusercontent.com/59119926/201929752-4682f485-c0cb-49bb-a3ff-99c253c5467d.png)
+
+
 </br></br>
 Make a wireless network unresponsive </br>
 
@@ -52,10 +55,3 @@ simply increase the buffer size by running this command -> `sudo ifconfig <net_i
 This tool is only for testing and can only be used where strict consent has been given. Do not use it for illegal purposes! It is the end user’s responsibility to obey all applicable local, state and federal laws. I assume no liability and am not responsible for any misuse or damage caused by this tool and software.
 
 Distributed under the GNU License.
-
-# Preview
-The screenshots illustrate this attack running from a kali nethunter phone, and from a windows terminal. </br> </br> 
-<img width="268" alt="image" src="https://user-images.githubusercontent.com/59119926/184556919-e8b286b4-6207-4c13-b791-5ec2744927c1.png"></br> </br> </br> </br>
-<img width="301" alt="image" src="https://user-images.githubusercontent.com/59119926/184553797-ad7050a9-6455-45d1-b00f-b1ae5c90e8aa.png">
-
-
