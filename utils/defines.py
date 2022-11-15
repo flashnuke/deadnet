@@ -11,9 +11,9 @@ WHITE = '\033[0m'
 
 DELIM = RED + f"{'=' * 49}" + WHITE
 
-BANNER = f""" {BOLD}{RED}____{GRAY}                 _ {BOLD}{RED}_   _{GRAY}      _   
-{BOLD}{RED}|  _ \\{GRAY}  ___  ____  __| {BOLD}{RED}| \ | |{GRAY} ___| |_ 
-{BOLD}{RED}| | | |{GRAY}/ _ \/ _  |/ _` {BOLD}{RED}|  \| |{GRAY}/ _ \ __|
-{BOLD}{RED}| |_| |{GRAY}  __/ (_| | (_| {BOLD}{RED}| |\  |{GRAY}  __/ |_ 
-{BOLD}{RED}|____/{GRAY} \___|\__,_|\__,_{BOLD}{RED}|_| \_|{GRAY}\___|\__|{WHITE}
+BANNER = f"""      {BOLD}{RED}____{GRAY}                 _ {BOLD}{RED}_   _{GRAY}      _   
+     {BOLD}{RED}|  _ \\{GRAY}  ___  ____  __| {BOLD}{RED}| \ | |{GRAY} ___| |_ 
+     {BOLD}{RED}| | | |{GRAY}/ _ \/ _  |/ _` {BOLD}{RED}|  \| |{GRAY}/ _ \ __|
+     {BOLD}{RED}| |_| |{GRAY}  __/ (_| | (_| {BOLD}{RED}| |\  |{GRAY}  __/ |_ 
+     {BOLD}{RED}|____/{GRAY} \___|\__,_|\__,_{BOLD}{RED}|_| \_|{GRAY}\___|\__|{WHITE}
 """
