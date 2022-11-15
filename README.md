@@ -1,5 +1,4 @@
-![image](https://user-images.githubusercontent.com/59119926/201929752-4682f485-c0cb-49bb-a3ff-99c253c5467d.png)
-
+![image](https://user-images.githubusercontent.com/59119926/201932570-c7191e99-7b5c-4c02-b7dc-3c5b48191b68.png)
 
 </br></br>
 Make a wireless network unresponsive </br>
