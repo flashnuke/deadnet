@@ -9,17 +9,18 @@ from utils import *
 conf.verb = 0
 #   --------------------------------------------------------------------------------------------------------------------
 #   ....................................................................................................................
-#   ......................................._.........______........__.........____......................................
-#   ....................................../ \...____|    \ \....../ /___.____|    \.....................................
-#   ...................................../   \.|  __|     \ \ /\ / /    |  __|     |....................................
-#   ..................................../ /.\ \| |  |  __/.\      /     | |..|  __/.....................................
-#   .................................../_/...\_\_|..|_|.....\_/\_/.\____|_|..|_|........................................
+#   ....................................................................................................................
+#   ....................................... ____ ............... _ _ . _ .... _ ........................................
+#   .......................................|  _ \  ___  __ _  __| | \ | | ___| |_ ......................................
+#   .......................................| | | |/ _ \/ _` |/ _` |  \| |/ _ \ __|......................................
+#   .......................................| |_| |  __/ (_| | (_| | |\  |  __/ |_ ......................................
+#   .......................................|____/ \___|\__,_|\__,_|_| \_|\___|\__|......................................
 #   ....................................................................................................................
 #   Ⓒ by https://github.com/flashnuke Ⓒ................................................................................
 #   --------------------------------------------------------------------------------------------------------------------
 
 
-class ArpWarp:
+class DeadNet:
     def __init__(self, iface, cidrlen, s_time, gateway, spoof_ipv6ra, ipv6_preflen):
         self.network_interface = iface
         self.arp_poison_interval = s_time
@@ -38,23 +39,23 @@ class ArpWarp:
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = getmacbyip(self.gateway_ipv4)
         if not self.gateway_mac:
-            raise Exception(f"[!] Unable to get gateway mac -> {self.gateway_ipv4}")
+            raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         self.print_settings()
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
-        printf(f"[*] Generated {len(self.host_ipv4s)} possible IPV4 hosts")
+        printf(f"{BLUE}[*]{WHITE} Generated {len(self.host_ipv4s)} possible IPV4 hosts")
         if self.spoof_ipv6ra:
-            printf(f"[*] IPv6 RA spoof is enabled, setting up...")
+            printf(f"{BLUE}[*]{WHITE} IPv6 RA spoof is enabled, setting up...")
             if not os_is_windows():
-                printf("[*] Pinging IPv6 subnet for hosts...")
-                printf(f"[+] Found {len(self.get_all_hosts_ipv6())} IPv6 hosts during setup")
+                printf(f"{BLUE}[*]{WHITE} Pinging IPv6 subnet for hosts...")
+                printf(f"{BLUE}[+]{WHITE} Found {len(self.get_all_hosts_ipv6())} IPv6 hosts during setup")
             else:
-                printf("[-] Windows does not support ping6, skipping...")
+                printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
         else:
-            printf(f"[-] IPv6 RA spoof is disabled, skipping ping6...")
+            printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
 
         self.abort = False
 
@@ -134,16 +135,16 @@ class ArpWarp:
                     self.poison_ra()
                 if os_is_linux():
                     printf(2 * "\x1b[1A\x1b[2K")
-                printf(f"[+] attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
+                printf(f"{GREEN}[+]{WHITE} attacking..." + f"cycle #{str(loop_count)} duration {get_ts_ms() - now}[ms]".rjust(33))
                 time.sleep(self.arp_poison_interval)
             except Exception as exc:
                 printf(DELIM)
-                printf(f"[!] Exception caught -> {exc}")
+                printf(f"{RED}[!]{WHITE} Exception caught -> {exc}")
                 printf(traceback.format_exc())
                 self.abort = True
             except KeyboardInterrupt:
                 printf(DELIM)
-                printf(f"[-] User requested to stop...")
+                printf(f"{RED}[-]{WHITE} User requested to stop...")
                 self.abort = True
 
     @staticmethod
@@ -161,6 +162,6 @@ if __name__ == "__main__":
     arguments = define_args()
     invalidate_print()  # after arg parsing
 
-    warper = ArpWarp(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
-                     arguments.spoof_ipv6ra, arguments.preflen)
-    warper.start_attack()
+    attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
+                       arguments.spoof_ipv6ra, arguments.preflen)
+    attacker.start_attack()

@@ -7,8 +7,8 @@ _DEF_PREFLEN = 64
 
 
 def define_args():
-    parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison attack',
-                                     usage=f"./{os.path.basename(__file__)} iface")
+    parser = argparse.ArgumentParser(description=f'Perform an ARP cache poison & dead router attacks',
+                                     usage=f"./deadnet.py iface")
     parser.add_argument("-i", "--network-interface", dest='iface', type=str, metavar=(""),
                         help="the name of the network interface (from `ifconfig`, i.e -> 'eth0')",
                         required=True)
@@ -26,8 +26,8 @@ def define_args():
                         required=False)
 
     parser.add_argument("-6", "--spoof_ipv6ra", dest='spoof_ipv6ra', action="store_true",
-                        default=False, help="spoof IPv6 ra packets, causing a dead router attack"
-                                            " (disabled by default)", required=False)
+                        default=True, help="spoof IPv6 ra packets, causing a dead router attack"
+                                           " (enabled by default)", required=False)
 
     parser.add_argument("-pl", "--set-preflen", dest='preflen', type=int, metavar=(""), default=_DEF_PREFLEN,
                         help=f"set the prefix length of the IPv6 subnet (default -> {_DEF_PREFLEN})",

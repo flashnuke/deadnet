@@ -1,4 +1,3 @@
-![image](https://user-images.githubusercontent.com/59119926/196631171-91d7d096-ee06-4489-876f-ff553f18537d.png)
 </br></br>
 Make a wireless network unresponsive </br>
 
@@ -24,7 +23,7 @@ scapy~=2.4.5
 
 The network interface is a mandatory param and should always be passed, for example (`eth0` is the most commonly used in kali): 
 ```bash
-./arpwarp.py -i eth0
+./deadnet.py -i eth0
 ```
 
 * Setting cidr length
@@ -37,7 +36,7 @@ In case something goes wrong and the gateway ip cannot be automatically set, a c
 As mentioned before, it is possible to spoof RA packets in case the network uses IPv6 which does not implement an ARP mechanism. <br/>
 This can be enabled by simply passing `-6, --spoof-ipv6ra`, for example:
 ```bash
-./arpwarp.py -i eth0 --spoof-ipv6nd
+./deadnet.py -i eth0 --spoof-ipv6nd
 ```
 
 * Setting preflen
