@@ -5,10 +5,15 @@
 Make a wireless network unresponsive </br>
 
 # How it works
-For IPv6 networks, this attack periodically sends a spoofed RA (router discovery) packet with the gateway's lladdr to the multicast address on the local link, which signals that the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a [scapy](https://github.com/secdev/scapy) method is running on a separate thread in the background, sniffing traffic. It immediately invalidates all incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`). </br>
+### IPv6
+In IPv6, the ARP mechanism was ditched due to several reasons, one of them being lack of security. </br>
+Instead there is `Neighbor/Router Discovery Protocol`, which will be exploited in this attack. </br>
 [For more info about how IPV6 router discovery mechanism works](https://en.wikipedia.org/wiki/Neighbor_Discovery_Protocol#Functions)</br>
 
-For IPv4, this attack continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
+**Dead router attack** - this attack periodically sends a spoofed RA (router discovery) packet with the gateway's lladdr to the multicast address on the local link, which signals that the router is dead. This would prevent the hosts from forwarding traffic to the gateway. Furthermore, a [scapy](https://github.com/secdev/scapy) method is running on a separate thread in the background, sniffing traffic. It immediately invalidates all incoming RA packets from routers by sending spoofed ones that indicate the router is not operational (`routerlifetime=0`). </br>
+
+### IPv4
+**ARP attack** - continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
 The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 
