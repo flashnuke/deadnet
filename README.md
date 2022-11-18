@@ -2,7 +2,7 @@
 
 
 </br></br>
-Make a wireless network unresponsive </br>
+Make a wireless network unresponsive (works on NetHunter as well)</br>
 
 # How it works
 ### IPv6
