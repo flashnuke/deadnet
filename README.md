@@ -16,6 +16,10 @@ Instead there is `Neighbor/Router Discovery Protocol`, which will be exploited i
 **ARP attack** - continuously sends spoofed ARP packets (using [scapy](https://github.com/secdev/scapy)) to every host on the network, poisoning its ARP table. </br>
 The gateway is mapped to an incorrect MAC address and therefore the traffic never reaches its true destination, making the network unresponsive. </br>
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
+</br>
+### Wifi-Deauth
+There's another way to make a perform a DoS attack on wireless networks and that is by sending de-auth packets.</br>
+There's a separate project for that [here](https://github.com/flashnuke/wifi-deauth) and it requires a network adapter that supports packet injection.
 
 # Requirements
 Works on every OS. </br>
