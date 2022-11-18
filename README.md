@@ -2,7 +2,9 @@
 
 
 </br></br>
-Make a wireless network unresponsive (works on NetHunter as well)</br>
+Make a wireless network unresponsive
+* Tested on Kali Nethunter
+* Works for both IPv6 and IPv4
 
 # How it works
 ### IPv6
