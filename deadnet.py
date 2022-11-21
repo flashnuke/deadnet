@@ -56,8 +56,13 @@ class DeadNet:
                 printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
-
         self.abort = False
+
+    def user_abort(self):
+        printf(DELIM)
+        printf(f"{RED}[-]{WHITE} User requested to stop...")
+        self.abort = True
+        exit()
 
     def print_settings(self):
         printf("- net iface" + self.network_interface.rjust(38))
@@ -81,8 +86,10 @@ class DeadNet:
                     host = line[s_idx:e_idx]
                     if host not in ipv6_hosts:
                         ipv6_hosts.append(host)  # returns None on fail
-        except Exception:
+        except Exception as exc:
             pass
+        except KeyboardInterrupt:
+            self.user_abort()
         return ipv6_hosts
 
     def poison_arp(self):
@@ -144,17 +151,16 @@ class DeadNet:
                 printf(traceback.format_exc())
                 self.abort = True
             except KeyboardInterrupt:
-                printf(DELIM)
-                printf(f"{RED}[-]{WHITE} User requested to stop...")
-                self.abort = True
+                self.user_abort()
 
     @staticmethod
     def get_gateway_ipv4(iface):
         try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
-            raise Exception(f"{RED}[!]{WHITE} Unable to IPv4 gateway, try setting manually"
-                            f" by passing (-g, --set-gateway)...")
+            printf(f"{RED}[!]{WHITE} Unable to IPv4 gateway, try setting manually"
+                   f" by passing (-g, --set-gateway)...")
+            exit()
 
 
 if __name__ == "__main__":
