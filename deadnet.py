@@ -158,8 +158,9 @@ class DeadNet:
         try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
-            raise Exception(f"{RED}[!]{WHITE} Unable to IPv4 gateway, try setting manually"
-                            f" by passing (-g, --set-gateway)...")
+            printf(f"{RED}[!]{WHITE} Unable to IPv4 gateway, try setting manually"
+                   f" by passing (-g, --set-gateway)...")
+            exit()
 
 
 if __name__ == "__main__":
