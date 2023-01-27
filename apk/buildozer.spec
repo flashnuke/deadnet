@@ -1,13 +1,10 @@
 [app]
 
 # (str) Title of your application
-title = My Application
+title = DeadNet
 
 # (str) Package name
-package.name = myapp
-
-# (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.name = deadnet
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -29,7 +26,7 @@ source.include_exts = py,png,jpg,kv,atlas
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1
+version = 1.0
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -37,7 +34,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy
+requirements = python3,kivy,scapy
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
