@@ -2,23 +2,19 @@ from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
-import copy
 from kivy.uix.gridlayout import GridLayout
-import select
-import re
-from importlib.machinery import SourceFileLoader
 
-import sys
-sys.path.append("..")
-import deadnet
-deadnet._PRINT_LOGO = False
-print(deadnet._PRINT_LOGO)
+#import sys
+#sys.path.append("..")
+#import deadnet
+#deadnet._PRINT_LOGO = False
+#print(deadnet._PRINT_LOGO)
 
-import subprocess
-import os
+#import subprocess
+#import os
 # os.system('python ../deadnet.py')
 from kivy.uix.boxlayout import BoxLayout
-
+from scapy.all import *
 import subprocess
 # stdout_manager = select.poll()
 
@@ -59,14 +55,12 @@ class MainApp(App):
         print(f'gateway -> { self.gateway}')
 
     def on_start_press(self, instance):
-        _PRINT_LOGO = False
-        import psutil
+        self.symbol_label.text = "asdasdasdsad"
+        import time
+        time.sleep(2)
+        self.symbol_label.text =  str(conf.iface)
 
-        addrs = psutil.net_if_addrs()
-        print(addrs.keys())
-        self.symbol_label.text = addrs
-
-        batcmd = "python ../deadnet.py "
+        batcmd = "python ../deadnet.py -i " + conf.iface
         result = subprocess.Popen(batcmd, shell=True,
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding=None)
         process_output = result.stdout.readlines()
@@ -74,11 +68,10 @@ class MainApp(App):
         for i in process_output[6:]:
             screen_output += i.decode()
 
-        screen_output = re.sub(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?', '', screen_output)
-
+#
         print(screen_output)
         self.symbol_label.text = screen_output
-
+        return
     def on_enter(self, instance, value=None):
         print('User pressed enter in', instance)
         print("-> " + self.gateway)
