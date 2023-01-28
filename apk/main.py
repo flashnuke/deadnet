@@ -4,10 +4,25 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 import copy
 from kivy.uix.gridlayout import GridLayout
+import select
+from importlib.machinery import SourceFileLoader
 
+# import sys
+# sys.path.append("..")
+# import deadnet
+
+import subprocess
+import os
+# os.system('python ../deadnet.py')
 from kivy.uix.boxlayout import BoxLayout
 
+import subprocess
 
+# stdout_manager = select.poll()
+batcmd = "dir"
+result = subprocess.Popen(batcmd, shell=True,
+                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding=None)
+x = select.poll()
 class MainApp(App):
     _GATEWAY = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
     def build(self):
