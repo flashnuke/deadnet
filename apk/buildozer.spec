@@ -4,7 +4,7 @@
 title = DeadNet
 
 # (str) Package name
-package.name = deadnet
+package.name = com.deadnet
 
 # (str) Source code where the main.py live
 source.dir = .
