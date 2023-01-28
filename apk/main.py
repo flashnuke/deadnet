@@ -5,11 +5,14 @@ from kivy.uix.textinput import TextInput
 import copy
 from kivy.uix.gridlayout import GridLayout
 import select
+import re
 from importlib.machinery import SourceFileLoader
 
-# import sys
-# sys.path.append("..")
-# import deadnet
+import sys
+sys.path.append("..")
+import deadnet
+deadnet._PRINT_LOGO = False
+print(deadnet._PRINT_LOGO)
 
 import subprocess
 import os
@@ -17,12 +20,8 @@ import os
 from kivy.uix.boxlayout import BoxLayout
 
 import subprocess
-
 # stdout_manager = select.poll()
-batcmd = "dir"
-result = subprocess.Popen(batcmd, shell=True,
-                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding=None)
-x = select.poll()
+
 class MainApp(App):
     _GATEWAY = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
     def build(self):
@@ -31,10 +30,9 @@ class MainApp(App):
 
         self.symbol_label = Label(text='DeadNet',
                                   bold=True,
-                                  size_hint=(.5, .5),
-                                  font_size=100,
-                                  pos_hint={'center_x': .5, 'center_y': 1},
-                                  color=(237 / 255, 142 / 255, 43 / 255, 0.4))
+                                  # size_hint=(.5, .5),
+                                  # font_size=100,
+                                  pos_hint={'center_x': .5, 'center_y': 1})
         self.main_layout.add_widget(self.symbol_label)  # add price label
         self.button_test = Button(text='Start',
                                      size_hint=(None, None),
@@ -43,13 +41,13 @@ class MainApp(App):
         self.main_layout.add_widget(self.button_test)
         self.gateway = None
 
-        textinput = TextInput(text=self._GATEWAY, multiline=False,
-                              foreground_color=[1, 1, 0, 1],
-                              background_color=[0, 0, 0.15, 0.15],
-                              pos_hint={'center_x': .5, 'center_y': .5},
-                              size_hint=(None, None))
-        textinput.bind(text=self.on_text)
-        self.main_layout.add_widget(textinput)
+        # textinput = TextInput(text=self._GATEWAY, multiline=False,
+        #                       foreground_color=[1, 1, 0, 1],
+        #                       background_color=[0, 0, 0.15, 0.15],
+        #                       pos_hint={'center_x': .5, 'center_y': .5},
+        #                       size_hint=(None, None))
+        # textinput.bind(text=self.on_text)
+        # self.main_layout.add_widget(textinput)
 
 
         return self.main_layout
@@ -61,7 +59,26 @@ class MainApp(App):
         print(f'gateway -> { self.gateway}')
 
     def on_start_press(self, instance):
-        print("test")
+        _PRINT_LOGO = False
+        import psutil
+
+        addrs = psutil.net_if_addrs()
+        print(addrs.keys())
+        self.symbol_label.text = addrs
+
+        batcmd = "python ../deadnet.py "
+        result = subprocess.Popen(batcmd, shell=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding=None)
+        process_output = result.stdout.readlines()
+        screen_output = str()
+        for i in process_output[6:]:
+            screen_output += i.decode()
+
+        screen_output = re.sub(r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})?(;[0-9]{3})?)?[m|K]?', '', screen_output)
+
+        print(screen_output)
+        self.symbol_label.text = screen_output
+
     def on_enter(self, instance, value=None):
         print('User pressed enter in', instance)
         print("-> " + self.gateway)
