@@ -3,21 +3,20 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.gridlayout import GridLayout
-
-#import sys
-#sys.path.append("..")
-#import deadnet
+import time
+from deadnet import DeadNet
 #deadnet._PRINT_LOGO = False
-#print(deadnet._PRINT_LOGO)
-
+import jnius
+from jnius import autoclass
 #import subprocess
 #import os
 # os.system('python ../deadnet.py')
 from kivy.uix.boxlayout import BoxLayout
 from scapy.all import *
 import subprocess
+import netifaces
+import threading
 # stdout_manager = select.poll()
-
 class MainApp(App):
     _GATEWAY = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
     def build(self):
@@ -54,24 +53,39 @@ class MainApp(App):
         self.gateway=value
         print(f'gateway -> { self.gateway}')
 
+
     def on_start_press(self, instance):
-        self.symbol_label.text = "asdasdasdsad"
-        import time
-        time.sleep(2)
-        self.symbol_label.text =  str(conf.iface)
+        print(netifaces.interfaces())
+        gateways = netifaces.gateways()
+        print(gateways)
+        print("test")
+        xxx = str()
+        gateway = str()
+        iface = str()
+        gateway_hw = str()
+   
+        from subprocess import call
+        call(["su"])
+        for k, v in gateways.items():
+            if len(v) == 0:
+                continue
+            elif k == 2:
+                print("boba")
+                print(k)
+                print(v)
+                xxx = v[0]
+                gateway = xxx[0]
+                iface = xxx[1]
+                print(gateway)
+                print(iface)
+                gateway_hw = netifaces.ifaddresses(iface).get(17)[0].get('addr')
+        
+        print("im here boi")
+        DeadNet(iface ,24, 5, gateway,
+                       False, 64, gateway_hw).start_attack()
 
-        batcmd = "python ../deadnet.py -i " + conf.iface
-        result = subprocess.Popen(batcmd, shell=True,
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding=None)
-        process_output = result.stdout.readlines()
-        screen_output = str()
-        for i in process_output[6:]:
-            screen_output += i.decode()
 
-#
-        print(screen_output)
-        self.symbol_label.text = screen_output
-        return
+        # return
     def on_enter(self, instance, value=None):
         print('User pressed enter in', instance)
         print("-> " + self.gateway)
@@ -81,3 +95,5 @@ class MainApp(App):
 if __name__ == "__main__":
     app = MainApp()
     app.run()
+
+
