@@ -1,151 +1,179 @@
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
-from kivy.uix.gridlayout import GridLayout
-from utils import *
-import time
-# from deadnet import DeadNet
-#deadnet._PRINT_LOGO = False
-# import jnius
-# from jnius import autoclass
-#import subprocess
-#import os
-# os.system('python ../deadnet.py')
-from kivy.uix.boxlayout import BoxLayout
-from scapy.all import *
-import subprocess
-# import netifaces
-import threading
-# stdout_manager = select.poll()
-
-# +++++++++++++++++
-
+import re
 import os
 import sys
 import threading
+import netifaces
 
-_DEVNULL = open(os.devnull, "w")
-_ORIG_STDOUT = sys.stdout
-_TEXT = str()
-lock = threading.RLock()
+from subprocess import call
+from utils import *
+from deadnet import DeadNet
+from scapy.all import *
 
+from kivy.app import App
+from kivy.uix.label import Label
+from kivy.uix.image import Image
+from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.gridlayout import GridLayout
+from kivy.graphics import Color, Rectangle
 
-def invalidate_print():
-    global _DEVNULL
-    sys.stdout = _DEVNULL
-
-
-def printf(text):
-    global _TEXT, lock
-    with lock:
-        _TEXT += text
-
-
-def get_text():
-    global _TEXT, lock
-    with lock:
-        return _TEXT
-
-
-# +++++++++++++++++
 
 class MainApp(App):
-    _GATEWAY = "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+    _WIDGET_PROPERTIES = {
+        "settings_bg_color": [1, 1, 1, 0.15],
+        "settings_fg_color": [1, 1, 1, 1],
+        "settings_text_size": 40,
+        "button_text_size": 65,
+        "button_sz_hint": (0.25, None),
+        "button_pos_hint": {'center_x': .5, 'center_y': .5}
+    }
+
+    def __init__(self, *args, **kwargs):
+        self._GATEWAY_IPV4, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
+        self._abort_lck = threading.RLock()
+        self._deadnet_ins = None
+        self.main_layout = None
+        self.settings_layout = None
+        self.output_label = None
+        self.buttons_layout = None
+        self.button_start, self.button_stop = None, None
+        self.credit_label = None
+        self.img = None
+
+        super().__init__(*args, **kwargs)
+
     def build(self):
-        self._GATEWAY = "127.0.0.1"
         self.main_layout = BoxLayout(orientation="vertical")
+        self.img = Image(source='assets/banner.png')
+        self.main_layout.add_widget(self.img)
 
-        self.symbol_label = Label(text='DeadNet',
+        self.settings_layout = GridLayout(cols=2,
+                                          padding=33,
+                                          size_hint_y=0.85)
+        iface_label = Label(text='- Network interface',
+                            halign="left",
+                            valign="middle",
+                            font_size=self._WIDGET_PROPERTIES["settings_text_size"])
+        iface_label.bind(size=iface_label.setter('text_size'))
+        self.settings_layout.add_widget(iface_label)
+        self.settings_layout.add_widget(
+            TextInput(text=self._IFACE,
+                      size_hint=(0.5, None),
+                      height=90,
+                      background_color=self._WIDGET_PROPERTIES["settings_bg_color"],
+                      foreground_color=self._WIDGET_PROPERTIES["settings_fg_color"],
+                      font_size=self._WIDGET_PROPERTIES["settings_text_size"],
+                      multiline=False,
+                      on_text=lambda instance, value: setattr(self, "_IFACE", value)))
+
+        gateway_label = Label(text='- IPv4 gateway',
+                              halign="left",
+                              valign="middle",
+                              font_size=self._WIDGET_PROPERTIES["settings_text_size"])
+        gateway_label.bind(size=gateway_label.setter('text_size'))
+        self.settings_layout.add_widget(gateway_label)
+        self.settings_layout.add_widget(
+            TextInput(text=self._GATEWAY_IPV4,
+                      size_hint=(0.5, None),
+                      height=90,
+                      background_color=self._WIDGET_PROPERTIES["settings_bg_color"],
+                      foreground_color=self._WIDGET_PROPERTIES["settings_fg_color"],
+                      font_size=self._WIDGET_PROPERTIES["settings_text_size"],
+                      multiline=False,
+                      on_text=lambda instance, value: setattr(self, "_GATEWAY_IPV4", value)))
+
+        self.main_layout.add_widget(self.settings_layout)
+
+        self.output_label = Label(text='ready...',
                                   bold=True,
-                                  # size_hint=(.5, .5),
-                                  # font_size=100,
+                                  markup=True,
                                   pos_hint={'center_x': .5, 'center_y': 1})
-        self.main_layout.add_widget(self.symbol_label)  # add price label
-        self.button_test = Button(text='Start',
-                                     size_hint=(None, None),
-                                     pos_hint={'center_x': .5, 'center_y': .5})
-        self.button_test.bind(on_press=self.on_start_press)
-        self.main_layout.add_widget(self.button_test)
-        self.gateway = None
+        self.main_layout.add_widget(self.output_label)
 
-        # textinput = TextInput(text=self._GATEWAY, multiline=False,
-        #                       foreground_color=[1, 1, 0, 1],
-        #                       background_color=[0, 0, 0.15, 0.15],
-        #                       pos_hint={'center_x': .5, 'center_y': .5},
-        #                       size_hint=(None, None))
-        # textinput.bind(text=self.on_text)
-        # self.main_layout.add_widget(textinput)
+        self.buttons_layout = GridLayout(cols=2,
+                                         padding=33,
+                                         size_hint_y=0.85)
+        self.button_start = Button(text=f'{GREEN}{BOLD}Start{COLOR_RESET}{BOLD_RESET}',
+                                   font_size=self._WIDGET_PROPERTIES["button_text_size"],
+                                   markup=True,
+                                   size_hint=self._WIDGET_PROPERTIES["button_sz_hint"],
+                                   height=220,
+                                   pos_hint=self._WIDGET_PROPERTIES["button_pos_hint"],
+                                   background_color=self._WIDGET_PROPERTIES["settings_bg_color"])
+        self.button_start.bind(on_press=self.on_start_press)
+        self.buttons_layout.add_widget(self.button_start)
 
-        self.output_label = Label(text='output',
+        self.button_stop = Button(text=f'{RED}{BOLD}Stop{COLOR_RESET}{BOLD_RESET}',
+                                  font_size=self._WIDGET_PROPERTIES["button_text_size"],
+                                  markup=True,
+                                  size_hint=self._WIDGET_PROPERTIES["button_sz_hint"],
+                                  height=220,
+                                  pos_hint=self._WIDGET_PROPERTIES["button_pos_hint"],
+                                  background_color=self._WIDGET_PROPERTIES["settings_bg_color"])
+        self.button_stop.bind(on_press=self.on_stop_press)
+        self.buttons_layout.add_widget(self.button_stop)
+        self.main_layout.add_widget(self.buttons_layout)
+
+        self.credit_label = Label(text=f'written by {BLUE}[u][ref=https://github.com/flashnuke]@flashnuke[/ref]{COLOR_RESET}[/u]',
                                   bold=True,
-                                  # size_hint=(.5, .5),
-                                  # font_size=100,
-                                  pos_hint={'center_x': .5, 'center_y': 1})
-        self.main_layout.add_widget(self.output_label)  # add price label
-
-        threading.Thread(target=self.update_output, args=tuple()).start()
+                                  markup=True,
+                                  pos_hint={'center_x': .5, 'center_y': 1},
+                                  on_ref_press=self.on_ref_credit_press)
+        self.main_layout.add_widget(self.credit_label)
 
         return self.main_layout
-    ##,
-                           #   background_color=[0, 0, 0, 0]
-    #
-    def on_text(self, instance, value):
-        self.gateway=value
-        print(f'gateway -> { self.gateway}')
 
+    def on_ref_credit_press(self, *args, **kwargs):
+        import webbrowser
+        webbrowser.open("https://github.com/flashnuke")
 
     def on_start_press(self, instance):
-        global xxx
-        print(netifaces.interfaces())
-        gateways = netifaces.gateways()
-        print(gateways)
-        print("test")
-        xxx = str()
-        gateway = str()
-        iface = str()
-        gateway_hw = str()
+        threading.Thread(target=self.do_attack, args=tuple()).start()  # should be a separate thread
 
-        from subprocess import call
-        call(["su"])
+    def do_attack(self):
+        with self._abort_lck:
+            if self._deadnet_ins:
+                return
+            try:
+                self._deadnet_ins = DeadNet(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_HWDDR, self.printf)
+            except Exception as exc:
+                self.printf(f"error during setup -> {exc}")
+                return
+        self._deadnet_ins.start_attack()
+
+    def on_stop_press(self, instance):
+        with self._abort_lck:
+            if self._deadnet_ins:
+                self._deadnet_ins.user_abort()
+            self._deadnet_ins = None
+
+    def printf(self, text, fit_size=False):
+        # use only inside Deadnet to maintain format
+        self.output_label.text = text
+        if fit_size:  # needed for big msgs such as exceptions
+            self.output_label.text_size = self.output_label.size
+
+    @staticmethod
+    def init_gateway():
+        gateway_ipv4, iface, gateway_hwaddr = "undefined", "undefined", "undefined"
+        gateways = netifaces.gateways()
         for k, v in gateways.items():
             if len(v) == 0:
                 continue
             elif k == 2:
-                print("boba")
-                print(k)
-                print(v)
-                xxx = v[0]
-                gateway = xxx[0]
-                iface = xxx[1]
-                print(gateway)
-                print(iface)
-                gateway_hw = netifaces.ifaddresses(iface).get(17)[0].get('addr')
-        
-        print("im here boi")
-        # DeadNet(iface, 24, 5, gateway, False, 64, gateway_hw).start_attack()
+                d = v[0]
+                gateway_ipv4 = d[0]
+                iface = d[1]
+                addresses = [item['addr'] for sublist in netifaces.ifaddresses(iface).values() for item in sublist if re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", item['addr'])]
+                gateway_hwaddr = addresses[0]
+                if not gateway_hwaddr:
+                    pass
 
-        # return
-    def on_enter(self, instance, value=None):
-        print('User pressed enter in', instance)
-        print("-> " + self.gateway)
-
-    def update_output(self):
-        # todo pass this as callback to get_text or smth
-        # todo update the attack loop and time in a separate box, and all other output will be printed here consistently
-        # todo attack loop doesnt have to be an output box, it can be there before the program starts
-        ctr = 0
-        while True:
-            ctr += 1
-            printf(2 * "\x1b[1A\x1b[2K")
-            printf(str(ctr))
-            self.output_label.text = get_text()
-            time.sleep(1)
-
+        return gateway_ipv4, gateway_hwaddr, iface
 
 
 if __name__ == "__main__":
+    call(["su"])  # for root
     app = MainApp()
     app.run()
-
-

