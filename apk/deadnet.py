@@ -63,9 +63,9 @@ class DeadNet:
 
         for [src_path, bin_path] in [[arp_orig_path, self.arp_path],
                                      [nra_orig_path2, self.nra_path]]:
-            subprocess.run(f"cp -rf {src_path} {bin_path}", stdout=subprocess.PIPE, shell=True, check=True)
-            subprocess.run(f"chmod 777 {bin_path}", stdout=subprocess.PIPE, shell=True, check=True)
-            subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True, check=True)
+            subprocess.run(f"cp -rf {src_path} {bin_path}", stdout=subprocess.PIPE, shell=True)
+            subprocess.run(f"chmod 777 {bin_path}", stdout=subprocess.PIPE, shell=True)
+            subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
         self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data()
         self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
