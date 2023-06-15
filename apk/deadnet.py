@@ -40,7 +40,7 @@ class DeadNet:
         "i386": "i386",
     }
 
-    def __init__(self, iface, gateway, gateway_mac=None, print_mtd=None):
+    def __init__(self, iface, gateway_ipv4, gateway_ipv6, gateway_mac=None, print_mtd=None):
         self.network_interface = iface
         conf.iface = self.network_interface
 
@@ -75,12 +75,12 @@ class DeadNet:
         self.subnet_ipv4 = self.user_ipv4.split(".")[:3]
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/24"  # assuming CIDR length is 24
 
-        self.gateway_ipv4 = gateway
+        self.gateway_ipv4 = gateway_ipv4
         self.gateway_mac = gateway_mac or getmacbyip(self.gateway_ipv4)
         self.gateway_mac_fake = RandMAC()
         if not self.gateway_mac:
             raise Exception(f"Unable to get gateway MAC address")
-        self.gateway_ipv6 = self.mac2ipv6_ll(self.gateway_mac, "fe80")
+        self.gateway_ipv6 = gateway_ipv6
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
@@ -94,11 +94,6 @@ class DeadNet:
             self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
         self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n"
-
-    @staticmethod
-    def mac2ipv6_ll(mac, pref):
-        m = hex(int(mac.translate(str.maketrans('', '', ' .:-')), 16) ^ 0x020000000000)[2:]
-        return f'{pref}::%s:%sff:fe%s:%s' % (m[:4], m[4:6], m[6:8], m[8:12])
 
     def get_ipv6_data(self):
         prefix, preflen = str(), int()

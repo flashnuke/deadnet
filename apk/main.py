@@ -30,7 +30,7 @@ class MainApp(App):
     }
 
     def __init__(self, *args, **kwargs):
-        self._GATEWAY_IPV4, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
+        self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
         self._abort_lck = threading.RLock()
         self._deadnet_ins = None
         self.main_layout = None
@@ -136,7 +136,8 @@ class MainApp(App):
             if self._deadnet_ins:
                 return
             try:
-                self._deadnet_ins = DeadNet(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_HWDDR, self.printf)
+                self._deadnet_ins = DeadNet(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
+                                            self.printf)
             except Exception as exc:
                 self.printf(f"error during setup -> {exc}")
                 return
@@ -156,21 +157,32 @@ class MainApp(App):
 
     @staticmethod
     def init_gateway():
-        gateway_ipv4, iface, gateway_hwaddr = "undefined", "undefined", "undefined"
+        gateway_ipv4, gateway_ipv6, iface, gateway_hwaddr = "undefined", "undefined", "undefined", "undefined"
         gateways = netifaces.gateways()
-        for k, v in gateways.items():
-            if len(v) == 0:
-                continue
-            elif k == 2:
-                d = v[0]
-                gateway_ipv4 = d[0]
-                iface = d[1]
-                addresses = [item['addr'] for sublist in netifaces.ifaddresses(iface).values() for item in sublist if re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", item['addr'])]
-                gateway_hwaddr = addresses[0]
-                if not gateway_hwaddr:
-                    pass
+        ipv4_data = gateways[netifaces.AF_INET][0]  # take first for IPv4
+        gateway_ipv4 = ipv4_data[0]
+        iface = ipv4_data[1]
+        addresses = [item['addr'] for sublist in netifaces.ifaddresses(iface).values() for item in sublist if
+                     re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", item['addr'])]
+        gateway_hwaddr = addresses[0]  # t0d0 exctract elsewhere
 
-        return gateway_ipv4, gateway_hwaddr, iface
+        ipv6_data = gateways[netifaces.AF_INET6]
+        for d in ipv6_data:
+            if d[1] == iface:
+                gateway_ipv6 = d[0]
+
+        result = subprocess.run(['ip', 'neighbor', 'show', 'default'], capture_output=True, text=True)
+        output = result.stdout.strip()
+
+        for line in output.split('\n'):
+            columns = line.split()
+            if len(columns) >= 4:
+                if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
+                    print(f"opa -> {columns[4]}")
+                    gateway_hwaddr = columns[4]
+                    break
+
+        return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
 
 if __name__ == "__main__":
