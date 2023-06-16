@@ -10,9 +10,9 @@ import platform as pt
 
 from utils import *
 
-from android.permissions import request_permissions, Permission
-request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
-                     Permission.ACCESS_NETWORK_STATE])
+# from android.permissions import request_permissions, Permission
+# request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
+#                      Permission.ACCESS_NETWORK_STATE])
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 from scapy.all import *
@@ -41,7 +41,6 @@ class DeadNet:
     }
 
     def __init__(self, iface, gateway_ipv4, gateway_ipv6, gateway_mac=None, print_mtd=None):
-        subprocess.call(["su"])  # test root
         self.network_interface = iface
         conf.iface = self.network_interface
 
@@ -55,7 +54,7 @@ class DeadNet:
         self.arch_type = self._BINARY_MAP.get(pt.machine())
         if not self.arch_type:
             raise Exception(f"unsupported device machine architecture -> {pt.machine()}")
-        
+
         # Get the full path to the binary
         arp_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'arp.{self.arch_type}')
         self.arp_path = f'/data/data/org.deadnet.deadnet/arp.{self.arch_type}'
