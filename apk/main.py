@@ -36,8 +36,8 @@ class MainApp(App):
             wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
             wifi_info = wifi_service.getConnectionInfo()
             ssid_name = wifi_info.getSSID().replace('"', '')
-            if ssid_name == "<unknown ssid>":
-                self.ssid_name = f"{RED}Unable to detect an SSID{COLOR_RESET}"
+            if ssid_name == "<unknown ssid>":  # unable to get ssid
+                ssid_name = f"{RED}Unable to detect an SSID{COLOR_RESET}"
             elif ssid_name == self.ssid_name:  # no change
                 pass
             else:  # new ssid
