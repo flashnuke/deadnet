@@ -68,7 +68,8 @@ class DeadNet:
             subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
         self.gateway_ipv6 = gateway_ipv6
-        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data() if self.gateway_ipv6 != "undefined" else None, None
+        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data() if self.gateway_ipv6 != "undefined" else (None, None)
+
         self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
 
         self.user_ipv4 = get_if_addr(self.network_interface)
@@ -134,8 +135,8 @@ class DeadNet:
             subprocess.Popen(
                 f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
                 shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            self.print_mtd(f"{self.intro}running... cycle #{self.loop_count}"
-                           f" [{((int(1 + idx * 10 / 255)) * '-').ljust(10)}]")
+            self.print_mtd(f"{self.intro}{GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
+                           f"{GRAY}[{idx} / {len(self.host_ipv4s)}]{COLOR_RESET}")
 
     def poison_ra(self):
         """
