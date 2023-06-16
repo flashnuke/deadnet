@@ -10,9 +10,9 @@ import platform as pt
 
 from utils import *
 
-# from android.permissions import request_permissions, Permission
-# request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
-#                      Permission.ACCESS_NETWORK_STATE])
+from android.permissions import request_permissions, Permission
+request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
+                     Permission.ACCESS_NETWORK_STATE])
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 from scapy.all import *
