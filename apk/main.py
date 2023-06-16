@@ -85,7 +85,7 @@ class MainApp(App):
 
         self.main_layout.add_widget(self.settings_layout)
 
-        self.output_label = Label(text='ready...',
+        self.output_label = Label(text=str(),
                                   bold=True,
                                   markup=True,
                                   pos_hint={'center_x': .5, 'center_y': 1})
@@ -113,7 +113,12 @@ class MainApp(App):
                                   background_color=self._WIDGET_PROPERTIES["settings_bg_color"])
         self.button_stop.bind(on_press=self.on_stop_press)
         self.buttons_layout.add_widget(self.button_stop)
-        self.main_layout.add_widget(self.buttons_layout)
+
+        try:
+            call(["su"])  # test root
+            self.main_layout.add_widget(self.buttons_layout)
+        except Exception as exc:  # don't add buttons if phone is not rooted
+            self.printf(f"{RED}unable to set root, is the phone rooted?{COLOR_RESET}")
 
         self.credit_label = Label(text=f'written by {BLUE}[u][ref=https://github.com/flashnuke]@flashnuke[/ref]{COLOR_RESET}[/u]',
                                   bold=True,
@@ -166,7 +171,7 @@ class MainApp(App):
                      re.match("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", item['addr'])]
         gateway_hwaddr = addresses[0]  # t0d0 exctract elsewhere
 
-        ipv6_data = gateways[netifaces.AF_INET6]
+        ipv6_data = gateways.get(netifaces.AF_INET6, list())
         for d in ipv6_data:
             if d[1] == iface:
                 gateway_ipv6 = d[0]
@@ -178,7 +183,6 @@ class MainApp(App):
             columns = line.split()
             if len(columns) >= 4:
                 if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
-                    print(f"opa -> {columns[4]}")
                     gateway_hwaddr = columns[4]
                     break
 
@@ -186,6 +190,5 @@ class MainApp(App):
 
 
 if __name__ == "__main__":
-    call(["su"])  # for root
     app = MainApp()
     app.run()

