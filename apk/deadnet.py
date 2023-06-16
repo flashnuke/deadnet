@@ -136,7 +136,7 @@ class DeadNet:
                 f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
                 shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.print_mtd(f"{self.intro}{GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
-                           f"{GRAY}[{idx} / {len(self.host_ipv4s)}]{COLOR_RESET}")
+                           f"{GRAY}[{idx + 1} / {len(self.host_ipv4s)}]{COLOR_RESET}")
 
     def poison_ra(self):
         """
