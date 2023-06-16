@@ -12,7 +12,7 @@ from utils import *
 
 from android.permissions import request_permissions, Permission
 request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
-                     Permission.ACCESS_NETWORK_STATE])
+                     Permission.ACCESS_NETWORK_STATE, Permission.ACCESS_FINE_LOCATION])
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 from scapy.all import *
@@ -94,8 +94,9 @@ class DeadNet:
         else:
             self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
-        self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n"
-        self.intro += f"IPv4 subnet range - {self.subnet_ipv4_sr}\n\n"
+        self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
+                      f"IPv4 subnet range - {self.subnet_ipv4_sr}\n" \
+                      f"IPv4 gateway - {self.gateway_ipv4}\n\n"
 
     def get_ipv6_data(self):
         prefix, preflen = str(), int()

@@ -2,42 +2,15 @@ BoxLayout:
     orientation: 'vertical'
     Image:
         source: 'assets/banner.png'
-    GridLayout:
-        cols: 2
-        padding: 33
-        size_hint_y: 0.85
-        Label:
-            text: '- Network interface'
-            halign: 'left'
-            valign: 'middle'
-            font_size: 40
-            text_size: (500, None)
-            size: self.texture_size
-        TextInput:
-            text: app._IFACE
-            size_hint: (0.5, None)
-            height: 90
-            background_color: [1, 1, 1, 0.15]
-            foreground_color: [1, 1, 1, 1]
-            font_size: 40
-            multiline: False
-            on_text: app._IFACE = self.text
-        Label:
-            text: '- IPv4 gateway'
-            halign: 'left'
-            valign: 'middle'
-            font_size: 40
-            text_size: (500, None)
-            size: self.texture_size
-        TextInput:
-            text: app._GATEWAY_IPV4
-            size_hint: (0.5, None)
-            height: 90
-            background_color: [1, 1, 1, 0.15]
-            foreground_color: [1, 1, 1, 1]
-            font_size: 40
-            multiline: False
-            on_text: app._GATEWAY_IPV4 = self.text
+    Button:
+        id: ssid_button
+        font_size: 50
+        text: '[color=#E6DA00]' + app.ssid_name + '[/color]'
+        bold: True
+        markup: True
+        pos_hint: {'center_x': .5, 'center_y': 1}
+        background_color: [0, 0, 0, 0]
+        on_press: app.setup_network_data()
     Label:
         text: ''
         bold: True

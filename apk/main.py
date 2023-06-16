@@ -5,12 +5,19 @@ import subprocess
 from utils import *
 from deadnet import DeadNet
 from kivy.app import App
+from jnius import autoclass
 
 
 class MainApp(App):
     def __init__(self, **kwargs):
-        self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
+        self._GATEWAY_IPV4 = "undefined"
+        self._GATEWAY_IPV6 = "undefined"
+        self._GATEWAY_HWDDR = "undefined"
+        self._IFACE = "undefined"
+        self.ssid_name = "undefined"
+
         self._abort_lck = threading.RLock()
+        self.setup_network_data()
         self._deadnet_ins = None
 
         self._root_status = False
@@ -21,6 +28,32 @@ class MainApp(App):
             pass
 
         super().__init__(**kwargs)
+
+    def setup_network_data(self):
+        with self._abort_lck:
+            ctx = autoclass('android.content.Context')
+            pa = autoclass('org.kivy.android.PythonActivity')
+            wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
+            wifi_info = wifi_service.getConnectionInfo()
+            ssid_name = wifi_info.getSSID().replace('"', '')
+            if ssid_name == "<unknown ssid>":
+                self.ssid_name = f"{RED}Unable to detect an SSID{COLOR_RESET}"
+            elif ssid_name == self.ssid_name:  # no change
+                pass
+            else:  # new ssid
+                self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
+                try:
+                    self.printf("")  # clear output
+                except Exception as exc:
+                    pass
+            self.ssid_name = ssid_name
+            self.set_ssid_name()
+
+    def set_ssid_name(self):
+        try:
+            self.root.ids.ssid_button.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
+        except AttributeError:  # fails on startup - it's ok
+            pass
 
     @staticmethod
     def init_gateway():
