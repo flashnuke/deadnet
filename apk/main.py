@@ -2,8 +2,9 @@ import re
 import threading
 import netifaces
 import subprocess
+
 from utils import *
-from deadnet import DeadNet
+from deadnet_apk import DeadNetAPK
 from kivy.app import App
 from jnius import autoclass
 
@@ -38,16 +39,20 @@ class MainApp(App):
             ssid_name = wifi_info.getSSID().replace('"', '')
             if ssid_name == "<unknown ssid>":  # unable to get ssid
                 ssid_name = f"{RED}Unable to detect an SSID{COLOR_RESET}"
+                self.clear_output_label()
             elif ssid_name == self.ssid_name:  # no change
                 pass
             else:  # new ssid
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
-                try:
-                    self.printf("")  # clear output
-                except Exception as exc:
-                    pass
+                self.clear_output_label()
             self.ssid_name = ssid_name
             self.set_ssid_name()
+
+    def clear_output_label(self):
+        try:
+            self.printf("")  # clear output
+        except Exception as exc:
+            pass
 
     def set_ssid_name(self):
         try:
@@ -98,13 +103,13 @@ class MainApp(App):
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
     def do_attack(self):
-        if self.is_root():
+        if self.is_root() and "<unknown ssid>" not in self.ssid_name:
             with self._abort_lck:
                 if self._deadnet_ins:
                     return
                 try:
-                    self._deadnet_ins = DeadNet(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
-                                                self.printf)
+                    self._deadnet_ins = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
+                                                   self.printf)
                 except Exception as exc:
                     self.printf(f"error during setup -> {exc}")
                     return
