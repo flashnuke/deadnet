@@ -13,7 +13,7 @@ package.domain = org.deadnet
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,arm64
+source.include_exts = py,png,jpg,kv,atlas,arm64,arm,x86_64,x86
 
 # (list) List of inclusions using pattern matching
 source.include_patterns = assets/*,images/*.png
@@ -96,7 +96,7 @@ fullscreen = 0
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions/#build-options-1 for all the supported syntaxes and properties)
 #android.permissions = android.permission.INTERNET, (name=android.permission.WRITE_EXTERNAL_STORAGE;maxSdkVersion=18)
-android.permissions = READ_SECURE_SETTINGS,ACCESS_NETWORK_STATE,INTERNET,WRITE_EXTERNAL_STORAGE,ACCESS_WIFI_STATE,NET_RAW,ACCESS_SUPERUSER
+android.permissions = READ_SECURE_SETTINGS,ACCESS_NETWORK_STATE,INTERNET,WRITE_EXTERNAL_STORAGE,ACCESS_WIFI_STATE,NET_RAW,ACCESS_SUPERUSER,ACCESS_FINE_LOCATION
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
