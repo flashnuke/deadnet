@@ -9,7 +9,10 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk
 
 
 # Building
-Steps to build the app manually.
+Steps to build the app manually. </br>
+The following tools are required:
+* NDK tools
+* Buildozer and Kivy library
 
 ### Compiling the C++ Binaries
 The C++ binaries source code files (`src/arp.cpp` for the ARP poisoning and `src/nra.cpp` for the dead router attack) should be compiled by NDK:
