@@ -4,7 +4,8 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk
 </br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into native binaries that are run explicitly by the Python app.
 
 # Requirements
-* Phone must be rooted
+* Device must be rooted
+* The native binaries are compiled for the following for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
 
 
 # Building
@@ -33,6 +34,11 @@ $NDK_PATH/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/ar
 cd deadnet/apk
 buildozer android debug # build in debug mode
 ```
+
+# Notes
+### Permissions
+* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter (even when root)
+* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name)
 
 
 # Disclaimer
