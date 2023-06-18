@@ -1,8 +1,7 @@
 # Deadnet APK
 
-An Android app that runs Deadnet. </br> 
-The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk/apk/bin) directory, but it can be built as well since all the source files are included in the repo.
-</br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into native binaries that are run by the Pythonic app.
+The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk/apk/bin) directory, but it can be built manually as well.
+</br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into native binaries that are run explicitly by the Python app.
 
 # Requirements
 * Phone must be rooted
