@@ -2,7 +2,7 @@
 
 An Android app that runs Deadnet. </br> 
 The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk/apk/bin) directory, but it can be built as well since all the source files are included in the repo.
-</br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into binaries that are run by the Pythonic app.
+</br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into native binaries that are run by the Pythonic app.
 
 # Requirements
 * Phone must be rooted
@@ -34,3 +34,10 @@ $NDK_PATH/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/ar
 cd deadnet/apk
 buildozer android debug # build in debug mode
 ```
+
+
+# Disclaimer
+
+This tool is only for testing and can only be used where strict consent has been given. Do not use it for illegal purposes! It is the end user’s responsibility to obey all applicable local, state and federal laws. I assume no liability and am not responsible for any misuse or damage caused by this tool and software.
+
+Distributed under the GNU License.
