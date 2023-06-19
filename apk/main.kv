@@ -1,0 +1,47 @@
+BoxLayout:
+    orientation: 'vertical'
+    Image:
+        source: 'assets/banner.png'
+    Button:
+        id: ssid_button
+        font_size: 50
+        text: '[color=#E6DA00]' + app.ssid_name + '[/color]'
+        bold: True
+        markup: True
+        pos_hint: {'center_x': .5, 'center_y': 1}
+        background_color: [0, 0, 0, 0]
+        on_press: app.setup_network_data()
+    Label:
+        text: ''
+        bold: True
+        markup: True
+        pos_hint: {'center_x': .5, 'center_y': 1}
+        id: output_label
+    GridLayout:
+        cols: 2
+        padding: 33
+        size_hint_y: 0.85
+        Button:
+            text: '[color=#11B011][b]Start[/color][/b]'
+            font_size: 65
+            markup: True
+            size_hint: (0.25, None)
+            height: 220
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            background_color: [1, 1, 1, 0.15]
+            on_press: app.on_start_press()
+        Button:
+            text: '[color=#D10000][b]Stop[/color][/b]'
+            font_size: 65
+            markup: True
+            size_hint: (0.25, None)
+            height: 220
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            background_color: [1, 1, 1, 0.15]
+            on_press: app.on_stop_press()
+    Label:
+        text: 'written by [color=#4D4FFF][u][ref=https://github.com/flashnuke]@flashnuke[/ref][/color][/u]'
+        bold: True
+        markup: True
+        pos_hint: {'center_x': .5, 'center_y': 1}
+        on_ref_press: app.on_ref_credit_press()
