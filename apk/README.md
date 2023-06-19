@@ -1,11 +1,12 @@
 # Deadnet APK
-
+<p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
+A simple GUI that runs Deadnet directoy on an Android device. </br>
 The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk/apk/bin) directory, but it can be built manually as well.
-</br>The parts that are supposed to open network sockets and send the spoofed packets were written in C++ and compiled into native binaries that are run explicitly by the Python app.
+</br>The code that is supposed to open network sockets and send the spoofed packets is written in C++ and compiled into native binaries that are run explicitly by the Python app.
 
 # Requirements
 * Device must be rooted
-* Most modern devices are ARM64. The native binaries are compiled for the following for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
+* Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
 
 
 # Building
@@ -40,7 +41,7 @@ buildozer android debug # build in debug mode
 
 # Notes
 ### Permissions
-* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter (even when root)
+* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root)
 * `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name)
 
 
