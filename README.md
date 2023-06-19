@@ -23,6 +23,12 @@ Furthermore, the gateway also receives an ARP packet from each host that contain
 There's another way to make a perform a DoS attack on wireless networks and that is by sending de-auth packets.</br>
 There's a separate project for that [here](https://github.com/flashnuke/wifi-deauth) and it requires a network adapter that supports packet injection.
 
+# Android APP
+<p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
+
+An Android APP designed to run Deadnet directly from rooted phones using a simple GUI with a couple of buttons. </br>
+See [the APK section](https://github.com/flashnuke/deadnet/tree/new_apk/apk) for more.
+
 # Requirements
 Works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
