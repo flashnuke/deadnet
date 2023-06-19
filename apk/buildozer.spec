@@ -47,7 +47,7 @@ fullscreen = 0
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions/#build-options-1 for all the supported syntaxes and properties)
 #android.permissions = android.permission.INTERNET, (name=android.permission.WRITE_EXTERNAL_STORAGE;maxSdkVersion=18)
-android.permissions = READ_SECURE_SETTINGS,ACCESS_NETWORK_STATE,INTERNET,WRITE_EXTERNAL_STORAGE,ACCESS_WIFI_STATE,NET_RAW,ACCESS_SUPERUSER,ACCESS_FINE_LOCATION
+android.permissions = CHANGE_WIFI_STATE,READ_SECURE_SETTINGS,ACCESS_NETWORK_STATE,INTERNET,WRITE_EXTERNAL_STORAGE,ACCESS_WIFI_STATE,NET_RAW,ACCESS_SUPERUSER,ACCESS_FINE_LOCATION
 
 # (bool) Copy library instead of making a libpymodules.so
 #android.copy_libs = 1
