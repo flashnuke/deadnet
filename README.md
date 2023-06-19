@@ -27,7 +27,7 @@ There's a separate project for that [here](https://github.com/flashnuke/wifi-dea
 <p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
 
 An Android APP designed to run Deadnet directly from rooted phones using a simple GUI with a couple of buttons. </br>
-See [the APK section](https://github.com/flashnuke/deadnet/tree/new_apk/apk) for more.
+See [the APK section](https://github.com/flashnuke/deadnet/tree/main/apk) for more.
 
 # Requirements
 Works on every OS. </br>
