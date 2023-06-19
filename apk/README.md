@@ -1,7 +1,8 @@
 # Deadnet APK
 <p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
-A simple GUI that runs Deadnet directoy on an Android device. </br>
-The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/new_apk/apk/bin) directory, but it can be built manually as well.
+A simple GUI that runs Deadnet directoy on an Android device. </br> </br>
+
+The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/apk/bin) directory, but it can be built manually as well.
 </br>The code that is supposed to open network sockets and send the spoofed packets is written in C++ and compiled into native binaries that are run explicitly by the Python app.
 
 # Requirements
