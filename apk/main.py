@@ -38,7 +38,7 @@ class MainApp(App):
             wifi_info = wifi_service.getConnectionInfo()
             ssid_name = wifi_info.getSSID().replace('"', '')
             if ssid_name == "<unknown ssid>":  # unable to get ssid
-                ssid_name = f"{RED}Unable to detect an SSID{COLOR_RESET}"
+                ssid_name = f"{RED}Unable to detect an SSID (turn on location){COLOR_RESET}"
                 self.clear_output_label()
             elif ssid_name == self.ssid_name:  # no change
                 pass
