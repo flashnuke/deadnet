@@ -73,7 +73,7 @@ class DeadNet:
                             break
             except Exception as exc:
                 pass
-            return gateway_hwaddr
+        return gateway_hwaddr
 
     def user_abort(self):
         printf(DELIM)
