@@ -37,7 +37,7 @@ class DeadNet:
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
-        self.gateway_mac = getmacbyip(self.gateway_ipv4)
+        self.gateway_mac = self.get_gateway_mac()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
@@ -57,6 +57,23 @@ class DeadNet:
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
         self.abort = False
+
+    def get_gateway_mac(self):
+        gateway_hwaddr = getmacbyip(self.gateway_ipv4)  # fetch MAC using ARP req
+        if not gateway_hwaddr:
+            try:
+                result = subprocess.run(['ip', 'neighbor', 'show', 'default'], capture_output=True, text=True)
+                output = result.stdout.strip()
+
+                for line in output.split('\n'):
+                    columns = line.split()
+                    if len(columns) >= 4:
+                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
+                            gateway_hwaddr = columns[4]
+                            break
+            except Exception as exc:
+                pass
+            return gateway_hwaddr
 
     def user_abort(self):
         printf(DELIM)
