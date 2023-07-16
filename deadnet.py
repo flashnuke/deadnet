@@ -2,6 +2,7 @@
 
 import ipaddress
 import logging
+import netifaces
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
 from scapy.all import *
@@ -37,7 +38,10 @@ class DeadNet:
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
-        self.gateway_mac = getmacbyip(self.gateway_ipv4)
+        if not self.gateway_ipv4:
+            raise Exception(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
+                            f" by passing (-g, --set-gateway)...")
+        self.gateway_mac = self.get_gateway_mac()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
@@ -57,6 +61,23 @@ class DeadNet:
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
         self.abort = False
+
+    def get_gateway_mac(self):
+        gateway_hwaddr = getmacbyip(self.gateway_ipv4)  # fetch MAC using ARP req
+        if not gateway_hwaddr:
+            try:
+                result = subprocess.run(['ip', 'neighbor', 'show', 'default'], capture_output=True, text=True)
+                output = result.stdout.strip()
+
+                for line in output.split('\n'):
+                    columns = line.split()
+                    if len(columns) >= 4:
+                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
+                            gateway_hwaddr = columns[4]
+                            break
+            except Exception as exc:
+                pass
+        return gateway_hwaddr
 
     def user_abort(self):
         printf(DELIM)
@@ -156,11 +177,17 @@ class DeadNet:
     @staticmethod
     def get_gateway_ipv4(iface):
         try:
+            gateways = netifaces.gateways()
+            ipv4_gateways = gateways[netifaces.AF_INET] # ipv4 gateways
+            for ipv4_data in ipv4_gateways:
+                if ipv4_data[1] == iface:
+                    return ipv4_data[0]
+        except Exception:
+            pass # try scapy instead
+        try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
-            printf(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
-                   f" by passing (-g, --set-gateway)...")
-            exit()
+            pass
 
 
 if __name__ == "__main__":
