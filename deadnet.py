@@ -39,9 +39,8 @@ class DeadNet:
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
         if not self.gateway_ipv4:
-            printf(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
-                   f" by passing (-g, --set-gateway)...")
-            exit()
+            raise Exception(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
+                            f" by passing (-g, --set-gateway)...")
         self.gateway_mac = self.get_gateway_mac()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
