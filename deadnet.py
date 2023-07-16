@@ -2,6 +2,7 @@
 
 import ipaddress
 import logging
+import netifaces
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
 from scapy.all import *
@@ -37,6 +38,10 @@ class DeadNet:
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
         self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
+        if not self.gateway_ipv4:
+            printf(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
+                   f" by passing (-g, --set-gateway)...")
+            exit()
         self.gateway_mac = self.get_gateway_mac()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
@@ -173,11 +178,17 @@ class DeadNet:
     @staticmethod
     def get_gateway_ipv4(iface):
         try:
+            gateways = netifaces.gateways()
+            ipv4_gateways = gateways[netifaces.AF_INET] # ipv4 gateways
+            for ipv4_data in ipv4_gateways:
+                if ipv4_data[1] == iface:
+                    return ipv4_data[0]
+        except Exception:
+            pass # try scapy instead
+        try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
-            printf(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
-                   f" by passing (-g, --set-gateway)...")
-            exit()
+            pass
 
 
 if __name__ == "__main__":
