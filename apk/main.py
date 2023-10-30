@@ -19,13 +19,13 @@ class MainApp(App):
         self.ssid_name = "undefined"
 
         self._abort_lck = threading.RLock()
-        self.setup_network_data()
         self._deadnet_ins = None
 
         self._root_status = False
         try:
             subprocess.call(["su"])  # test root
             self._root_status = True
+            self.setup_network_data()  # if not root - should not get here
         except (PermissionError, FileNotFoundError):
             pass
 
