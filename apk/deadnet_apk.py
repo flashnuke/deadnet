@@ -7,11 +7,12 @@ import netifaces
 import ipaddress
 import subprocess
 import platform as pt
-from threading import Condition
 
 from utils import *
 
 from android.permissions import request_permissions, Permission
+request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
+                     Permission.ACCESS_NETWORK_STATE, Permission.ACCESS_FINE_LOCATION, Permission.CHANGE_WIFI_STATE])
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 from scapy.all import *
@@ -38,17 +39,12 @@ class DeadNetAPK:
         "aarch64": "arm64",
         "i386": "i386",
     }
-    MISSING_ANDROID_PERMISSIONS = [Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
-                                   Permission.ACCESS_NETWORK_STATE, Permission.ACCESS_FINE_LOCATION,
-                                   Permission.CHANGE_WIFI_STATE]
-    CONDITION_ANDROID_PERMISSIONS = Condition()
 
     def __init__(self, iface, gateway_ipv4, gateway_ipv6, gateway_mac=None, print_mtd=None):
-        self.print_mtd = print_mtd
-
         self.network_interface = iface
         conf.iface = self.network_interface
 
+        self.print_mtd = print_mtd
         self.my_mac = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
         self.loop_count = 0
 
@@ -101,16 +97,6 @@ class DeadNetAPK:
         self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
                       f"IPv4 subnet range - {self.subnet_ipv4_sr}\n" \
                       f"IPv4 gateway - {self.gateway_ipv4}\n\n"
-
-    @staticmethod
-    def permissions_callback(permissions, results):
-        DeadNetAPK.MISSING_ANDROID_PERMISSIONS.clear()
-        if not all(results):
-            for perm, result in zip(permissions, results):
-                if not result:
-                    DeadNetAPK.MISSING_ANDROID_PERMISSIONS.append(perm)
-        with DeadNetAPK.CONDITION_ANDROID_PERMISSIONS:
-            DeadNetAPK.CONDITION_ANDROID_PERMISSIONS.notify()
 
     def get_ipv6_data(self):
         prefix, preflen = str(), int()
@@ -172,12 +158,3 @@ class DeadNetAPK:
             self.print_mtd(f"{self.abort}", True)
         else:
             self.print_mtd(f"{self.intro}{self.abort}")
-
-
-def request_user_permissions():
-    request_permissions(DeadNetAPK.MISSING_ANDROID_PERMISSIONS, DeadNetAPK.permissions_callback)
-    with DeadNetAPK.CONDITION_ANDROID_PERMISSIONS:
-        DeadNetAPK.CONDITION_ANDROID_PERMISSIONS.wait()
-
-
-request_user_permissions()

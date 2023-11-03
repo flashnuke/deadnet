@@ -2,10 +2,9 @@ import re
 import threading
 import netifaces
 import subprocess
-import traceback
 
 from utils import *
-from deadnet_apk import DeadNetAPK, request_user_permissions
+from deadnet_apk import DeadNetAPK
 from kivy.app import App
 from jnius import autoclass
 
@@ -19,13 +18,13 @@ class MainApp(App):
         self.ssid_name = "undefined"
 
         self._abort_lck = threading.RLock()
+        self.setup_network_data()
         self._deadnet_ins = None
 
         self._root_status = False
         try:
             subprocess.call(["su"])  # test root
             self._root_status = True
-            self.setup_network_data()  # if not root - should not get here
         except (PermissionError, FileNotFoundError):
             pass
 
@@ -64,37 +63,34 @@ class MainApp(App):
     @staticmethod
     def init_gateway():
         gateway_ipv4, gateway_ipv6, iface, gateway_hwaddr = "undefined", "undefined", "undefined", "undefined"
-        gateways = netifaces.gateways()
-        ipv4_data = gateways[netifaces.AF_INET][0]  # take first for IPv4
-        gateway_ipv4 = ipv4_data[0]
-        iface = ipv4_data[1]
+        try:
+            gateways = netifaces.gateways()
+            ipv4_data = gateways[netifaces.AF_INET][0]  # take first for IPv4
+            gateway_ipv4 = ipv4_data[0]
+            iface = ipv4_data[1]
 
-        ipv6_data = gateways.get(netifaces.AF_INET6, list())
-        for d in ipv6_data:
-            if d[1] == iface:
-                gateway_ipv6 = d[0]
+            ipv6_data = gateways.get(netifaces.AF_INET6, list())
+            for d in ipv6_data:
+                if d[1] == iface:
+                    gateway_ipv6 = d[0]
 
-        result = subprocess.run(['ip', 'neighbor', 'show', 'default'], capture_output=True, text=True)
-        output = result.stdout.strip()
+            result = subprocess.run(['ip', 'neighbor', 'show', 'default'], capture_output=True, text=True)
+            output = result.stdout.strip()
 
-        for line in output.split('\n'):
-            columns = line.split()
-            if len(columns) >= 4:
-                if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
-                    gateway_hwaddr = columns[4]
-                    break
+            for line in output.split('\n'):
+                columns = line.split()
+                if len(columns) >= 4:
+                    if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
+                        gateway_hwaddr = columns[4]
+                        break
+        except Exception as exc:
+            pass
 
         return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
     def is_root(self):
         if not self._root_status:
             self.printf(f"{RED}device is not rooted!{COLOR_RESET}")
-            return False
-        return True
-
-    def has_permissions(self):
-        if len(DeadNetAPK.MISSING_ANDROID_PERMISSIONS) > 0:
-            self.printf(f"Mandatory permissions are not granted:\n{','.join(DeadNetAPK.MISSING_ANDROID_PERMISSIONS)}")
             return False
         return True
 
@@ -106,19 +102,8 @@ class MainApp(App):
         if self.is_root():
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
-    def ssid_is_set(self):
-        if "<unknown ssid>" in self.ssid_name:
-            self.setup_network_data()
-        return "<unknown ssid>" not in self.ssid_name
-
     def do_attack(self):
-        if self.is_root():
-            if not self.has_permissions():
-                request_user_permissions()
-                self.setup_network_data()
-                return
-            if not self.ssid_is_set():
-                return
+        if self.is_root() and "<unknown ssid>" not in self.ssid_name:
             with self._abort_lck:
                 if self._deadnet_ins:
                     return
@@ -126,7 +111,7 @@ class MainApp(App):
                     self._deadnet_ins = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
                                                    self.printf)
                 except Exception as exc:
-                    self.printf(f"error during setup -> {exc}\n{traceback.format_exc()}")
+                    self.printf(f"error during setup -> {exc}")
                     return
             self._deadnet_ins.start_attack()
 
