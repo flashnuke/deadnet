@@ -43,9 +43,9 @@ class DeadNet:
                             f" by passing (-g, --set-gateway)...")
         self.gateway_mac = gateway_mac or self.get_gateway_mac()
         if not self.gateway_mac:
-            raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
+            raise Exception(f"{RED}[-]{WHITE} Unable to retrieve gateway ({self.gateway_ipv4}) mac address")
         elif not is_valid_mac(self.gateway_mac):
-            raise Exception(f"{RED}[-]{WHITE} Invalid gateway mac -> {self.gateway_mac}")
+            raise Exception(f"{RED}[-]{WHITE} Invalid gateway mac address -> {self.gateway_mac}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         self.print_settings()
