@@ -22,7 +22,7 @@ conf.verb = 0
 
 
 class DeadNet:
-    def __init__(self, iface, cidrlen, s_time, gateway, disable_ipv6, ipv6_preflen):
+    def __init__(self, iface, cidrlen, s_time, gateway_ipv4, gateway_mac, disable_ipv6, ipv6_preflen):
         self.network_interface = iface
         self.arp_poison_interval = s_time
         self.ipv6_preflen = ipv6_preflen or IPV6_PREFLEN
@@ -37,11 +37,11 @@ class DeadNet:
         self.subnet_ipv4 = self.user_ipv4.split(".")[:3]
         self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/{self.cidrlen_ipv4}"
 
-        self.gateway_ipv4 = gateway or self.get_gateway_ipv4(self.network_interface)
+        self.gateway_ipv4 = gateway_ipv4 or self.get_gateway_ipv4(self.network_interface)
         if not self.gateway_ipv4:
             raise Exception(f"{RED}[!]{WHITE} Unable to automatically set IPv4 gateway address, try setting manually"
                             f" by passing (-g, --set-gateway)...")
-        self.gateway_mac = self.get_gateway_mac()
+        self.gateway_mac = gateway_mac or self.get_gateway_mac()
         if not self.gateway_mac:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
@@ -72,7 +72,7 @@ class DeadNet:
                 for line in output.split('\n'):
                     columns = line.split()
                     if len(columns) >= 4:
-                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == iface:
+                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == self.network_interface:
                             gateway_hwaddr = columns[4]
                             break
             except Exception as exc:
@@ -89,6 +89,7 @@ class DeadNet:
         printf("- net iface" + self.network_interface.rjust(38))
         printf("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
         printf("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
+        printf("- MAC gateway" + self.gateway_ipv4.rjust(36))
         printf("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
         printf("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
         printf("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
@@ -197,6 +198,6 @@ if __name__ == "__main__":
     arguments = define_args()
     invalidate_print()  # after arg parsing
 
-    attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway,
-                       arguments.disable_ipv6, arguments.preflen)
+    attacker = DeadNet(arguments.iface, arguments.cidrlen, arguments.s_time, arguments.gateway_ipv4,
+                       arguments.gateway_mac, arguments.disable_ipv6, arguments.preflen)
     attacker.start_attack()
