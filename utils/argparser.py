@@ -21,15 +21,19 @@ def define_args():
                         help=f"set the sleep time between each arp poison attempt (default -> {_DEF_SLEEPTIME}[sec])",
                         required=False)
 
-    parser.add_argument("-g", "--set-gateway", dest='gateway', type=str, metavar=(""), default=None,
-                        help="set the gateway ip manually (defaults to x.x.x.1)",
+    parser.add_argument("-g", "--gateway-ipv4", dest='gateway_ipv4', type=str, metavar=(""), default=None,
+                        help="set the gateway ipv4 manually (defaults to x.x.x.1)",
+                        required=False)
+
+    parser.add_argument("-M", "--gateway-mac", dest='gateway_mac', type=str, metavar=(""), default=None,
+                        help="set the gateway mac address (use if unable to fetch automatically)",
                         required=False)
 
     parser.add_argument("-6", "--disable-ipv6", dest='disable_ipv6', action="store_true",
                         default=False, help="disable IPv6 dead router attack"
                                            " (enabled by default)", required=False)
 
-    parser.add_argument("-pl", "--set-preflen", dest='preflen', type=int, metavar=(""), default=_DEF_PREFLEN,
+    parser.add_argument("-p", "--set-preflen", dest='preflen', type=int, metavar=(""), default=_DEF_PREFLEN,
                         help=f"set the prefix length of the IPv6 subnet (default -> {_DEF_PREFLEN})",
                         required=False)
 

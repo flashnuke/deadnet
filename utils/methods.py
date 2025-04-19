@@ -1,5 +1,10 @@
+import re
 import sys
 import time
+
+
+def is_valid_mac(mac):
+    return re.match(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', mac)
 
 
 def get_ts_ms():
