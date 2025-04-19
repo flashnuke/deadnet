@@ -89,7 +89,7 @@ class DeadNet:
         printf("- net iface" + self.network_interface.rjust(38))
         printf("- sleep time" + str(self.arp_poison_interval).rjust(32) + "[sec]")
         printf("- IPv4 subnet" + self.subnet_ipv4_sr.rjust(36))
-        printf("- MAC gateway" + self.gateway_ipv4.rjust(36))
+        printf("- MAC gateway" + self.gateway_mac.rjust(36))
         printf("- IPv4 gateway" + self.gateway_ipv4.rjust(35))
         printf("- IPv6 gateway" + self.gateway_ipv6.rjust(35))
         printf("- IPv6 preflen" + str(self.ipv6_preflen).rjust(35))
