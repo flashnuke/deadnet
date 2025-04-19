@@ -49,6 +49,7 @@ class DeadNet:
         except ValueError as exc:
             printf(f"{RED}[-]{WHITE} Error calculating IPv6 address... is this the correct gateway mac?"
                    f" {self.gateway_mac}")
+            user_abort()
 
         self.print_settings()
 
