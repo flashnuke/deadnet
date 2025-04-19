@@ -1,7 +1,6 @@
+import re
 import sys
 import time
-
-import re
 
 
 def is_valid_mac(mac):
