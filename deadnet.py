@@ -46,12 +46,7 @@ class DeadNet:
             raise Exception(f"{RED}[-]{WHITE} Unable to get gateway mac -> {self.gateway_ipv4}")
         elif not is_valid_mac(self.gateway_mac):
             raise Exception(f"{RED}[-]{WHITE} Invalid gateway mac -> {self.gateway_mac}")
-        try:
-            self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
-        except ValueError as exc:
-            printf(f"{RED}[-]{WHITE} Error calculating IPv6 address... is this the correct gateway mac?"
-                   f" '{self.gateway_mac}'")
-            self.user_abort()
+        self.gateway_ipv6 = mac2ipv6_ll(self.gateway_mac, IPV6_LL_PREF)
 
         self.print_settings()
 
