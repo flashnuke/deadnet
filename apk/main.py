@@ -2,25 +2,24 @@ import re
 import threading
 import netifaces
 import subprocess
-import socket
-import struct # TODO check if all imports are needed BUT DO NOT REMOVE SOME THAT ARE NEEDED BUT CAN BE RUN WITHOUT
 
 from utils import *
 from deadnet_apk import DeadNetAPK
 from kivy.app import App
 from kivymd.toast.kivytoast import toast
 from kivymd.app import MDApp
-
+from typing import Union
 
 from kivy.clock import Clock
 
 from jnius import autoclass
 from scapy.all import *
 
+
 class MainApp(MDApp):
     def __init__(self, **kwargs):
         # todo try build release
-        # todo force bg to be dark theme
+        # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
 
         # todo remove defined use a different format
         # TODO add versions to all requirements in specs
@@ -32,10 +31,11 @@ class MainApp(MDApp):
         self.ssid_name = "undefined"
 
         self._abort_lck = threading.RLock()
-        self._deadnet_ins = None
+        self._deadnet_thread: Union[None, threading.Thread] = None
+        self._deadnet_instance: Union[None, DeadNetAPK] = None
 
         self._root_status = False
-        self._gateway_info = str() # todo this can be instructions if nto set.. "try location, connect wifi"
+        self._gateway_info = str()  # todo this can be instructions if nto set.. "try location, connect wifi"
         try:
             subprocess.call(["su"])  # test root
             self._root_status = True
@@ -79,78 +79,6 @@ class MainApp(MDApp):
         except AttributeError:  # fails on startup - it's ok
             pass
 
-    @staticmethod
-    def get_ipv6_with_su(iface):
-        try:
-            su_cmd = f"cat /proc/net/if_inet6"
-            result = subprocess.run(['su', '-c', su_cmd], capture_output=True, text=True)
-
-            if result.returncode != 0:
-                print(f"@@@@@ su command failed: {result.stderr.strip()}")
-                return "undefined"
-
-            for line in result.stdout.strip().splitlines():
-                parts = line.strip().split()
-                if parts[-1] == iface:
-                    raw = parts[0]
-                    ipv6 = ':'.join([raw[i:i + 4] for i in range(0, len(raw), 4)])
-                    return ipv6
-        except Exception as e:
-            print(f"@@@@@ Exception in get_ipv6_with_su: {e}")
-        return "undefined"
-
-    @staticmethod
-    def get_gateway_ip():
-        # grab the Android activity and Wi‑Fi service
-        PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        activity = PythonActivity.mActivity
-        Context = autoclass('android.content.Context')
-        wifi_service = activity.getSystemService(Context.WIFI_SERVICE)
-
-        # get the DhcpInfo and pull out the gateway int
-        dhcp_info = wifi_service.getDhcpInfo()
-        gw_int = dhcp_info.gateway
-
-        # convert little‑endian int to dotted quad
-        gw_ip = "{}.{}.{}.{}".format(
-            gw_int & 0xFF,
-            (gw_int >> 8) & 0xFF,
-            (gw_int >> 16) & 0xFF,
-            (gw_int >> 24) & 0xFF
-        )
-
-        return gw_ip
-
-    @staticmethod
-    def get_gateway_mac(iface):
-        try:
-            # build the su command
-            cmd = 'ip neighbor show default'
-            # run it as root
-            result = subprocess.run(
-                ['su', '-c', cmd],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            output = result.stdout.strip()
-            print(f"@@@@@ output: {output}")
-
-            # parse each line for "lladdr" on our interface
-            for line in output.splitlines():
-                cols = line.split()
-                # example cols: ['192.168.1.1', 'dev', 'wlan0', 'lladdr', 'aa:bb:cc:dd:ee:ff', 'REACHABLE']
-                if len(cols) >= 5 and cols[3] == 'lladdr' and cols[4] != '<incomplete>':
-                    if cols[2] == iface:
-                        return cols[4]
-        except subprocess.CalledProcessError as e:
-            # ip/ su failed
-            print(f"@@@@@ Error running ip neighbor: {e}")
-        except Exception as exc:
-            # something else went wrong
-            print(f"@@@@@ Unexpected error: {exc}")
-        return None
-
     def init_gateway(self):
         # todo refactor get details methods to other place?
         gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = "undefined"
@@ -165,15 +93,15 @@ class MainApp(MDApp):
 
             # Step 2: Use Android APIs via pyjnius
 
-            gateway_ipv4 = self.get_gateway_ip()
+            gateway_ipv4 = get_gateway_ipv4()
             print(f"@@@@@ Gateway IPv4 new method: {gateway_ipv4}")
 
             # Get  = gateway MAC address
-            gateway_hwaddr = self.get_gateway_mac(iface)
+            gateway_hwaddr = get_gateway_mac(iface)
             print(f"@@@@@ gateway_hwaddr: {gateway_hwaddr}")
 
             # Optional: Try IPv6 using /proc/net/if_inet6
-            gateway_ipv6 = self.get_ipv6_with_su(iface)
+            gateway_ipv6 = get_ipv6_with_su(iface)
             print(f"@@@@@ gateway_ipv6 (via su): {gateway_ipv6}")
 
         except Exception as exc:
@@ -195,45 +123,55 @@ class MainApp(MDApp):
     def on_start_press(self):
         # todo: if not defined, then error msg box open
         # todo: brief popup window of "started"
-
         if self.is_root():
+            self._toast_msg("Starting deadnet...")
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
     def on_refresh_press(self):
-        # todo: cant hit refresh while attacking.
-        # todo: brief popup window of that error
-        self.setup_network_data()
+        if self._is_deadnet_thread_active():
+            self._toast_msg("Cannot refresh during attack")
+        else:
+            self._toast_msg("Refreshing gateway data...")
+            self.setup_network_data()
 
     def do_attack(self):
         if self.is_root() and "<unknown ssid>" not in self.ssid_name:
             with self._abort_lck:
-                if self._deadnet_ins:
+                if self._deadnet_instance:
                     return
                 try:
-                    self._deadnet_ins = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
+                    self._deadnet_instance = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
                                                    self.printf)
                 except Exception as exc:
                     self.printf(f"error during setup -> {exc}")
                     return
-            t = threading.Thread(target=self._deadnet_ins.start_attack, daemon=True)
-            t.start()
+            self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
+            self._deadnet_thread.start()
             # todo: make t a variable that i can stop from elsewherw and wait to finish!@!
 
+# todo wrapper for is_root for all buttons
+# todo otherwise wrapper for is_connected_to_wifi to all buttons
 
     def on_stop_press(self):
         # todo: brief popup window of "stopped and errors"
 
         with self._abort_lck:
-            if self._deadnet_ins:
-                self._deadnet_ins.user_abort()
-            self._deadnet_ins = None  # todo make sure it's deleted
+            if self._deadnet_instance:
+                self._toast_msg("Stopping deadnet...")
+                self._deadnet_instance.user_abort()
+                if self._is_deadnet_thread_active():
+                    self._deadnet_thread.join()
+                self._toast_msg("Stopped deadnet")
+                self._deadnet_instance = None  # todo make sure it's deleted
+            else:
+                self._toast_msg("Deadnet is not running")
 
-        # TODO TAKE THIS FOR MSGING
-        toast(
-            "Invalid action",
-            duration=1.5,
-            background=[0, 0, 0, 0.7]
-        )
+    @staticmethod
+    def _toast_msg(msg: str):
+        toast(msg, duration=2, background=[0, 0, 0, 0.7])
+
+    def _is_deadnet_thread_active(self):
+        return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
 
     def printf(self, text, fit_size=False):
         self.root.ids.output_label.text = text
@@ -242,8 +180,7 @@ class MainApp(MDApp):
 
     def on_start(self):
         # on app start
-        self.toast_container = self.root # todo define in constructor
-        self.setup_network_data()  # TODO refactor into a reset button
+        self.setup_network_data()
 
 
 if __name__ == "__main__":
