@@ -20,8 +20,9 @@ The gateway is mapped to an incorrect MAC address and therefore the traffic neve
 Furthermore, the gateway also receives an ARP packet from each host that contains a spoofed MAC address.
 </br>
 ### Wifi-Deauth
-There's another way to make a perform a DoS attack on wireless networks and that is by sending de-auth packets.</br>
-There's a separate project for that [here](https://github.com/flashnuke/wifi-deauth) and it requires a network adapter that supports packet injection.
+There's another way to make a perform a DoS attack on wireless networks, WITHOUT HAVING CREDENTIALS, and that is by sending de-auth packets.</br>
+I have a separate project for that [here](https://github.com/flashnuke/wifi-deauth) and it requires a network adapter that supports packet injection. </br>
+If no credentials are present and you insist on using Deadnet, it's possible to run a dictionary-attack using a [wordlist](https://github.com/flashnuke/pass-generator) in combination with another tool that cracks Wifi handshakes to gain credentials first.
 
 # Android APP
 <p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
@@ -40,7 +41,6 @@ scapy~=2.4.5
 # Usage
 
 ## Poisoning ARP Cache (IPv4)
-
 The network interface is a mandatory param and should always be passed, for example (`eth0` is the most commonly used in kali): 
 ```bash
 ./deadnet.py -i eth0
