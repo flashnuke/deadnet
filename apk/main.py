@@ -17,8 +17,9 @@ from scapy.all import *
 
 # todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
 class MainApp(MDApp):
+    GH_URL = "https://github.com/flashnuke"
+
     def __init__(self, **kwargs):
-        # todo init gateway clean up
         # todo test on unrooted phone
         # todo try build release
         # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
@@ -62,13 +63,13 @@ class MainApp(MDApp):
     def setup_network_data(self):
         with self._abort_lck:
             ssid_name = get_ssid_name()
-            self.set_ssid_name(ssid_name)  # todo handle if not found
+            self.set_ssid_name(ssid_name)
 
             if not self._has_ssid():  # unable to get ssid
-                setup_output = f"{RED}Error{COLOR_RESET}: Unable to detect an SSID" \
-                               f"\nPlease make sure of the following:" \
-                               f"{BLUE}*{COLOR_RESET} Device is connected to wifi" \
-                               f"{BLUE}*{COLOR_RESET} Location is enabled" \
+                setup_output = f"{RED}Error{COLOR_RESET}: Unable to detect an SSID\n\n" \
+                               f"Please make sure of the following:\n" \
+                               f"{BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
+                               f"{BLUE}*{COLOR_RESET} Location is enabled\n" \
                                f"{BLUE}*{COLOR_RESET} Location permission is granted"
                 # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
@@ -96,16 +97,13 @@ class MainApp(MDApp):
     def _has_ssid(self):
         return not is_unknown_ssid(self.ssid_name) and self.ssid_name != NET_UNDEFINED
 
-    def _has_root_status(self): # todo remove?
+    def _has_root_status(self):
         return self._root_status
-            # self.printf(f"{RED}device is not rooted!{COLOR_RESET}")
-            # return False
-        # return True
 
-    def on_ref_credit_press(self, *args, **kwargs):
+    def on_ref_credit_press(self):
         try:
-            import webbrowser # todo move up?
-            webbrowser.open("https://github.com/flashnuke")
+            import webbrowser
+            webbrowser.open(self.GH_URL)
         except Exception as exc:
             print("print exc here") # todo print to logcat
 
@@ -143,7 +141,6 @@ class MainApp(MDApp):
     def on_stop_press(self):
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
-        # todo: brief popup window of "stopped and errors"
 
         with self._abort_lck:
             if self._deadnet_instance:
@@ -152,7 +149,7 @@ class MainApp(MDApp):
                 if self._is_deadnet_thread_active():
                     self._deadnet_thread.join()
                 self._toast_msg("Stopped deadnet")
-                self._deadnet_instance = None  # todo make sure it's deleted
+                self._deadnet_instance = None
             else:
                 self._toast_msg("Deadnet is not running")
 
