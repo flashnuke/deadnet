@@ -3,6 +3,14 @@ import subprocess
 from jnius import autoclass
 
 
+def get_net_iface_name():
+    result = subprocess.run(['getprop'], capture_output=True, text=True)
+    match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
+    if match:
+        return match.group(1)
+    return "undefined"  # todo
+
+
 def get_ipv6_with_su(iface):
     try:
         su_cmd = f"cat /proc/net/if_inet6"
@@ -73,3 +81,32 @@ def get_gateway_mac(iface):
         # something else went wrong
         print(f"@@@@@ Unexpected error: {exc}")
     return None
+
+
+def init_gateway():
+    # todo refactor get details methods to other place?
+    gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = "undefined"
+
+    try:
+        # Step 1: Get the actual Wi-Fi interface name from getprop
+        iface = get_net_iface_name()
+        print(f"@@@@@ iface: {iface}")
+
+        # Step 2: Use Android APIs via pyjnius
+
+        gateway_ipv4 = get_gateway_ipv4()
+        print(f"@@@@@ Gateway IPv4 new method: {gateway_ipv4}")
+
+        # Get  = gateway MAC address
+        gateway_hwaddr = get_gateway_mac(iface)
+        print(f"@@@@@ gateway_hwaddr: {gateway_hwaddr}")
+
+        # Optional: Try IPv6 using /proc/net/if_inet6
+        gateway_ipv6 = get_ipv6_with_su(iface)
+        print(f"@@@@@ gateway_ipv6 (via su): {gateway_ipv6}")
+
+    except Exception as exc:
+        print(f"@@@@@ Error during init_gateway: {exc}")
+
+    print(f"@@@@@ FINAL: {[gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface]}")
+    return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface

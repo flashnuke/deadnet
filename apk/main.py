@@ -18,6 +18,7 @@ from scapy.all import *
 # todo note: pc - executor, more stable to get gateway, etc...
 class MainApp(MDApp):
     def __init__(self, **kwargs):
+        # todo init gateway clean up
         # todo try build release
         # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
         # todo verify sudo for main pc also
@@ -63,7 +64,7 @@ class MainApp(MDApp):
                 pass
             else:  # new ssid
                 # todo test for prints if bold even does any effect and remove if not
-                self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = self.init_gateway()
+                self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
                 self._gateway_info = f"Net Interface - {BOLD}{self._IFACE}{COLOR_RESET}\n" \
                                      f"Gateway IPv4 - {BOLD}{self._GATEWAY_IPV4}{COLOR_RESET}\n" \
                                      f"Gateway IPv6 - {BOLD}{self._GATEWAY_IPV6}{COLOR_RESET}\n" \
@@ -84,36 +85,8 @@ class MainApp(MDApp):
         except AttributeError:  # fails on startup - it's ok
             pass
 
-    def init_gateway(self):
-        # todo refactor get details methods to other place?
-        gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = "undefined"
 
-        try:
-            # Step 1: Get the actual Wi-Fi interface name from getprop
-            result = subprocess.run(['getprop'], capture_output=True, text=True)
-            match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
-            if match:
-                iface = match.group(1)
-                print(f"@@@@@ iface: {iface}")
 
-            # Step 2: Use Android APIs via pyjnius
-
-            gateway_ipv4 = get_gateway_ipv4()
-            print(f"@@@@@ Gateway IPv4 new method: {gateway_ipv4}")
-
-            # Get  = gateway MAC address
-            gateway_hwaddr = get_gateway_mac(iface)
-            print(f"@@@@@ gateway_hwaddr: {gateway_hwaddr}")
-
-            # Optional: Try IPv6 using /proc/net/if_inet6
-            gateway_ipv6 = get_ipv6_with_su(iface)
-            print(f"@@@@@ gateway_ipv6 (via su): {gateway_ipv6}")
-
-        except Exception as exc:
-            print(f"@@@@@ Error during init_gateway: {exc}")
-
-        print(f"@@@@@ FINAL: {[gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface]}")
-        return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
     def is_root(self):
         if not self._root_status:
