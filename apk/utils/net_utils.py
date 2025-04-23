@@ -129,7 +129,7 @@ def init_gateway():
     return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
 
-def get_ipv6_prefdata():
+def get_ipv6_prefdata(interface_name: str):
     prefix = ""
     preflen = 0
     try:

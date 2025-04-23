@@ -74,7 +74,7 @@ class DeadNetAPK:
             subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
         self.gateway_ipv6 = gateway_ipv6
-        self.ipv6_prefix, self.ipv6_preflen = get_ipv6_prefdata() if self.gateway_ipv6 != "undefined" else (None, None) # todo undefuend null
+        self.ipv6_prefix, self.ipv6_preflen = get_ipv6_prefdata(self.network_interface) if self.gateway_ipv6 != "undefined" else (None, None) # todo undefuend null
 
         self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
 
