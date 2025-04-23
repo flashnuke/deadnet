@@ -4,6 +4,19 @@ import subprocess
 from jnius import autoclass
 
 
+def unknown_ssid_name() -> str:
+    return autoclass('android.net.wifi.WifiManager').UNKNOWN_SSID
+
+
+def get_ssid_name() -> str:
+    ctx = autoclass('android.content.Context')
+    pa = autoclass('org.kivy.android.PythonActivity')
+    wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
+    wifi_info = wifi_service.getConnectionInfo()
+    ssid_name = wifi_info.getSSID().replace('"', '')
+    return ssid_name
+
+
 def get_net_iface_name():
     result = subprocess.run(['getprop'], capture_output=True, text=True)
     match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)

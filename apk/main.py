@@ -17,8 +17,10 @@ from scapy.all import *
 
 # todo note: pc - executor, more stable to get gateway, etc...
 class MainApp(MDApp):
+    UNDEFINED_NICK = "null"
     def __init__(self, **kwargs):
         # todo init gateway clean up
+        # todo test on unrooted phone
         # todo try build release
         # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
         # todo verify sudo for main pc also
@@ -30,39 +32,44 @@ class MainApp(MDApp):
         # TODO notes - if VM - use bridged... not NAT
 
         # TODO test regular deadnet again
-        self._GATEWAY_IPV4 = "undefined"
-        self._GATEWAY_IPV6 = "undefined"
-        self._GATEWAY_HWDDR = "undefined"
-        self._IFACE = "undefined"
-        self.ssid_name = "undefined"
+        self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self._ssid_name = \
+            DeadNetAPK.UNDEFINED_NICK
 
         self._abort_lck = threading.RLock()
         self._deadnet_thread: Union[None, threading.Thread] = None
         self._deadnet_instance: Union[None, DeadNetAPK] = None
 
-        self._root_status = False
+        self._root_status = self._try_root()
         self._gateway_info = str()  # todo this can be instructions if nto set.. "try location, connect wifi"
-        try:
-            subprocess.call(["su"])  # test root
-            self._root_status = True
-        except (PermissionError, FileNotFoundError):
-            pass
 
         super().__init__(**kwargs)
 
+    @staticmethod
+    def _try_root():
+        try:
+            subprocess.call(["su"])  # test root
+            return True
+        except (PermissionError, FileNotFoundError):  # todo print exc for logcat
+            pass
+        return False
+
+    def _check_app_conditions(self, check_root: bool, check_ssid: bool):
+        if check_root and not self._has_root_status():
+            self._toast_msg("Error: device is not rooted")
+        elif check_ssid and not self._has_ssid():
+            self._toast_msg("Error: no wifi connection was found")
+        else:
+            return True
+        return False
+
     def setup_network_data(self):
         with self._abort_lck:
-            ctx = autoclass('android.content.Context')
-            pa = autoclass('org.kivy.android.PythonActivity')
-            wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
-            wifi_info = wifi_service.getConnectionInfo()
-            ssid_name = wifi_info.getSSID().replace('"', '')
-            if ssid_name == "<unknown ssid>":  # unable to get ssid
+            ssid_name = get_ssid_name()
+
+            if ssid_name == unknown_ssid_name():  # unable to get ssid
                 ssid_name = f"{RED}Unable to detect an SSID (turn on location){COLOR_RESET}"
                 self.clear_output_label()
-            elif ssid_name == self.ssid_name:  # no change # TODO whats this
-                pass
-            else:  # new ssid
+            else:  # has ssid
                 # todo test for prints if bold even does any effect and remove if not
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
                 self._gateway_info = f"Net Interface - {BOLD}{self._IFACE}{COLOR_RESET}\n" \
@@ -71,6 +78,7 @@ class MainApp(MDApp):
                                      f"Gateway MACaddr - {BOLD}{self._GATEWAY_HWDDR}{COLOR_RESET}"
                 # self.printf(gateway_info)
             self.set_ssid_name(ssid_name)  # todo handle if not found
+
             self.printf(self._gateway_info)
 
     def clear_output_label(self):
@@ -80,19 +88,20 @@ class MainApp(MDApp):
             pass
 
     def set_ssid_name(self, ssid_name):
+        self._ssid_name = ssid_name
         try:
-            self.root.ids.ssid_button.text = f"{YELLOW}{ssid_name}{COLOR_RESET}"
+            self.root.ids.ssid_button.text = f"{YELLOW}{self._ssid_name}{COLOR_RESET}"
         except AttributeError:  # fails on startup - it's ok
             pass
 
+    def _has_ssid(self):
+        return len(self._ssid_name) != 0  # todo and not "undefined"
 
-
-
-    def is_root(self):
-        if not self._root_status:
-            self.printf(f"{RED}device is not rooted!{COLOR_RESET}")
-            return False
-        return True
+    def _has_root_status(self): # todo remove?
+        return self._root_status
+            # self.printf(f"{RED}device is not rooted!{COLOR_RESET}")
+            # return False
+        # return True
 
     def on_ref_credit_press(self, *args, **kwargs):
         import webbrowser # todo move up?
@@ -101,11 +110,13 @@ class MainApp(MDApp):
     def on_start_press(self):
         # todo: if not defined, then error msg box open
         # todo: brief popup window of "started"
-        if self.is_root():
+        if self._has_root_status():
             self._toast_msg("Starting deadnet...")
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
     def on_refresh_press(self):
+        if not self._check_app_conditions(check_root=True, check_ssid=False):
+            return
         if self._is_deadnet_thread_active():
             self._toast_msg("Cannot refresh during attack")
         else:
@@ -113,7 +124,9 @@ class MainApp(MDApp):
             self.setup_network_data()
 
     def do_attack(self):
-        if self.is_root() and "<unknown ssid>" not in self.ssid_name:
+        if not self._check_app_conditions(check_root=True, check_ssid=True):
+            return
+        if self._has_root_status() and "<unknown ssid>" not in self._ssid_name:
             with self._abort_lck:
                 if self._deadnet_instance:
                     return
@@ -127,10 +140,12 @@ class MainApp(MDApp):
             self._deadnet_thread.start()
             # todo: make t a variable that i can stop from elsewherw and wait to finish!@!
 
-# todo wrapper for is_root for all buttons
+# todo wrapper for _has_root_status for all buttons
 # todo otherwise wrapper for is_connected_to_wifi to all buttons
 
     def on_stop_press(self):
+        if not self._check_app_conditions(check_root=True, check_ssid=True):
+            return
         # todo: brief popup window of "stopped and errors"
 
         with self._abort_lck:
