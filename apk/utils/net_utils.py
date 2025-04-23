@@ -5,6 +5,7 @@ from jnius import autoclass
 
 
 def unknown_ssid_name() -> str:
+    WifiManager = autoclass('android.net.wifi.WifiManager')
     cls = WifiManager.getClass()
     field = cls.getDeclaredField('UNKNOWN_SSID')
     field.setAccessible(True)
