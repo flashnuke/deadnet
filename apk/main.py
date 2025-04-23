@@ -53,9 +53,9 @@ class MainApp(MDApp):
 
     def _check_app_conditions(self, check_root: bool, check_ssid: bool):
         if check_root and not self._has_root_status():
-            self._toast_msg("Error: device is not rooted")
+            self._toast_msg("Error: Device is not rooted")
         elif check_ssid and not self._has_ssid():
-            self._toast_msg("Error: no wifi connection was found")
+            self._toast_msg("Error: No wifi connection was found")
         else:
             return True
         return False
@@ -66,11 +66,11 @@ class MainApp(MDApp):
             self.set_ssid_name(ssid_name)
 
             if not self._has_ssid():  # unable to get ssid
-                setup_output = f"{RED}Error{COLOR_RESET}: Unable to detect an SSID\n\n" \
-                               f"Please make sure of the following:\n" \
-                               f"{BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
-                               f"{BLUE}*{COLOR_RESET} Location is enabled\n" \
-                               f"{BLUE}*{COLOR_RESET} Location permission is granted"
+                setup_output = f"Unable to detect a wifi connection\n" \
+                               f"Please make sure of the following:\n\n" \
+                               f"\t{BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
+                               f"\t{BLUE}*{COLOR_RESET} Location is enabled\n" \
+                               f"\t{BLUE}*{COLOR_RESET} Location permission is granted"
                 # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
                 # todo test for prints if bold even does any effect and remove if not
