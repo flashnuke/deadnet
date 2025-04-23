@@ -32,7 +32,7 @@ class MainApp(MDApp):
         # TODO notes - if VM - use bridged... not NAT
 
         # TODO test regular deadnet again
-        self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self._ssid_name = \
+        self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             MainApp.UNDEFINED_NICK
 
         self._abort_lck = threading.RLock()
@@ -88,14 +88,14 @@ class MainApp(MDApp):
             pass
 
     def set_ssid_name(self, ssid_name):
-        self._ssid_name = ssid_name
+        self.ssid_name = ssid_name
         try:
-            self.root.ids.ssid_button.text = f"{YELLOW}{self._ssid_name}{COLOR_RESET}"
+            self.root.ids.ssid_label.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
         except AttributeError:  # fails on startup - it's ok
             pass
 
     def _has_ssid(self):
-        return len(self._ssid_name) != 0  # todo and not "undefined"
+        return len(self.ssid_name) != 0  # todo and not "undefined"
 
     def _has_root_status(self): # todo remove?
         return self._root_status
@@ -126,7 +126,7 @@ class MainApp(MDApp):
     def do_attack(self):
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
-        if self._has_root_status() and "<unknown ssid>" not in self._ssid_name:
+        if self._has_root_status() and "<unknown ssid>" not in self.ssid_name:
             with self._abort_lck:
                 if self._deadnet_instance:
                     return

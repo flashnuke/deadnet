@@ -8,15 +8,14 @@ BoxLayout:
     orientation: 'vertical'
     Image:
         source: 'assets/banner.png'
-    Button:
-        id: ssid_button
+    Label:
+        id: ssid_label
         font_size: 50
-        text: '[color=#E6DA00]' + app.ssid_name + '[/color]'
+        text: ''
         bold: True
         markup: True
         pos_hint: {'center_x': .5, 'center_y': 1}
         background_color: [0, 0, 0, 0]
-        on_press: app.setup_network_data()
     Label:
         text: ''
         bold: True
