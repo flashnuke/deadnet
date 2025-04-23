@@ -1,7 +1,10 @@
 import re
 import subprocess
 
+from typing import Tuple
 from jnius import autoclass
+
+NET_UNDEFINED = "null"
 
 
 def is_unknown_ssid(ssid: str) -> bool:
@@ -9,6 +12,15 @@ def is_unknown_ssid(ssid: str) -> bool:
         return True
     ssid_clean = ssid.strip().lower().replace('"', '')
     return ssid_clean == '<unknown ssid>'
+
+
+def get_device_mac_address(iface: str) -> str:
+    try:
+        with open(f"/sys/class/net/{iface}/address") as f:
+            return f.read().strip()
+    except Exception as e:
+        print(f"Error reading MAC address for {iface}: {e}")
+        return ""
 
 
 def get_ssid_name() -> str:
@@ -20,22 +32,22 @@ def get_ssid_name() -> str:
     return ssid_name
 
 
-def get_net_iface_name():
+def get_net_iface_name() -> str:
     result = subprocess.run(['getprop'], capture_output=True, text=True)
     match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
     if match:
         return match.group(1)
-    return "undefined"  # todo
+    return NET_UNDEFINED
 
 
-def get_ipv6_with_su(iface):
+def get_ipv6_with_su(iface: str) -> str:
     try:
         su_cmd = f"cat /proc/net/if_inet6"
         result = subprocess.run(['su', '-c', su_cmd], capture_output=True, text=True)
 
         if result.returncode != 0:
             print(f"@@@@@ su command failed: {result.stderr.strip()}")
-            return "undefined" # todo undefined?
+            return NET_UNDEFINED
 
         for line in result.stdout.strip().splitlines():
             parts = line.strip().split()
@@ -45,42 +57,40 @@ def get_ipv6_with_su(iface):
                 return ipv6
     except Exception as e:
         print(f"@@@@@ Exception in get_ipv6_with_su: {e}")
-    return "undefined" # todo undefined?
+    return NET_UNDEFINED
 
 
-def get_gateway_ipv4():
-    # grab the Android activity and Wi‑Fi service
-    PythonActivity = autoclass('org.kivy.android.PythonActivity')
-    activity = PythonActivity.mActivity
-    Context = autoclass('android.content.Context')
-    wifi_service = activity.getSystemService(Context.WIFI_SERVICE)
+def get_gateway_ipv4() -> str:
+    try:
+        # grab the Android activity and Wi‑Fi service
+        PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        activity = PythonActivity.mActivity
+        Context = autoclass('android.content.Context')
+        wifi_service = activity.getSystemService(Context.WIFI_SERVICE)
 
-    # get the DhcpInfo and pull out the gateway int
-    dhcp_info = wifi_service.getDhcpInfo()
-    gw_int = dhcp_info.gateway
+        # get the DhcpInfo and pull out the gateway int
+        dhcp_info = wifi_service.getDhcpInfo()
+        gw_int = dhcp_info.gateway
 
-    # convert little‑endian int to dotted quad
-    gw_ip = "{}.{}.{}.{}".format(
-        gw_int & 0xFF,
-        (gw_int >> 8) & 0xFF,
-        (gw_int >> 16) & 0xFF,
-        (gw_int >> 24) & 0xFF
-    )
+        # convert little‑endian int to dotted quad
+        gw_ip = "{}.{}.{}.{}".format(
+            gw_int & 0xFF,
+            (gw_int >> 8) & 0xFF,
+            (gw_int >> 16) & 0xFF,
+            (gw_int >> 24) & 0xFF
+        )
+        return gw_ip
+    except Exception as exc:
+        print("SDfsdf")
+    return NET_UNDEFINED
 
-    return gw_ip
 
-
-def get_gateway_mac(iface):
+def get_gateway_mac(iface: str) -> str:
     try:
         # build the su command
         cmd = 'ip neighbor show default'
         # run it as root
-        result = subprocess.run(
-            ['su', '-c', cmd],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(['su', '-c', cmd], capture_output=True, text=True, check=True)
         output = result.stdout.strip()
         print(f"@@@@@ output: {output}")
 
@@ -102,11 +112,13 @@ def get_gateway_mac(iface):
 
 def init_gateway():
     # todo refactor get details methods to other place?
-    gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = "undefined"
+    gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = NET_UNDEFINED
 
     try:
         # Step 1: Get the actual Wi-Fi interface name from getprop
         iface = get_net_iface_name()
+        if is_unknown_ssid(iface):
+            raise Exception("unable to get iface_name")
         print(f"@@@@@ iface: {iface}")
 
         # Step 2: Use Android APIs via pyjnius
@@ -129,7 +141,7 @@ def init_gateway():
     return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
 
-def get_ipv6_prefdata(interface_name: str):
+def get_ipv6_prefdata(interface_name: str) -> Tuple[str, int]:
     prefix = ""
     preflen = 0
     try:

@@ -14,9 +14,9 @@ from kivy.clock import Clock
 from jnius import autoclass
 from scapy.all import *
 
+
 # todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
 class MainApp(MDApp):
-    UNDEFINED_NICK = "null"
     def __init__(self, **kwargs):
         # todo init gateway clean up
         # todo test on unrooted phone
@@ -31,7 +31,7 @@ class MainApp(MDApp):
 
         # TODO test regular deadnet again
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
-            MainApp.UNDEFINED_NICK
+            NET_UNDEFINED
 
         self._abort_lck = threading.RLock()
         self._deadnet_thread: Union[None, threading.Thread] = None
@@ -94,7 +94,7 @@ class MainApp(MDApp):
             pass
 
     def _has_ssid(self):
-        return not is_unknown_ssid(self.ssid_name)  # todo and not "undefined"
+        return not is_unknown_ssid(self.ssid_name) and self.ssid_name != NET_UNDEFINED
 
     def _has_root_status(self): # todo remove?
         return self._root_status
