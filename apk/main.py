@@ -33,7 +33,7 @@ class MainApp(MDApp):
 
         # TODO test regular deadnet again
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self._ssid_name = \
-            DeadNetAPK.UNDEFINED_NICK
+            MainApp.UNDEFINED_NICK
 
         self._abort_lck = threading.RLock()
         self._deadnet_thread: Union[None, threading.Thread] = None
