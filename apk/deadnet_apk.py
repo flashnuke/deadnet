@@ -74,7 +74,7 @@ class DeadNetAPK:
             subprocess.run(f"chown root {bin_path}", stdout=subprocess.PIPE, shell=True)
 
         self.gateway_ipv6 = gateway_ipv6
-        self.ipv6_prefix, self.ipv6_preflen = self.get_ipv6_data() if self.gateway_ipv6 != "undefined" else (None, None)
+        self.ipv6_prefix, self.ipv6_preflen = get_ipv6_prefdata() if self.gateway_ipv6 != "undefined" else (None, None) # todo undefuend null
 
         self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
 
@@ -104,20 +104,6 @@ class DeadNetAPK:
                       f"IPv4 subnet range - {self.subnet_ipv4_sr}\n" \
                       f"IPv4 gateway - {self.gateway_ipv4}\n\n"
 
-    def get_ipv6_data(self):
-        prefix, preflen = str(), int()
-        try:
-            ipv6_data = netifaces.ifaddresses(self.network_interface)
-            for data_dict in ipv6_data[netifaces.AF_INET6]:
-                if "fe80::" not in data_dict['addr']:
-                    try:
-                        prefix = f"{':'.join(data_dict['addr'].split(':')[:4])}::"
-                        preflen = int(data_dict['netmask'].split('/')[-1])
-                    except Exception as exc:
-                        pass
-        except Exception as exc:
-            pass
-        return prefix, preflen
 
     def user_abort(self):
         self.abort = self.user_abort_reason

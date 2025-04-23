@@ -1,6 +1,5 @@
 import re
 import threading
-import netifaces
 import subprocess
 
 from utils import *
@@ -15,7 +14,7 @@ from kivy.clock import Clock
 from jnius import autoclass
 from scapy.all import *
 
-# todo note: pc - executor, more stable to get gateway, etc...
+# todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
 class MainApp(MDApp):
     UNDEFINED_NICK = "null"
     def __init__(self, **kwargs):
@@ -29,7 +28,6 @@ class MainApp(MDApp):
         # todo remove defined use a different format
         # TODO add versions to all requirements in specs
         # TODO remove not needed requiremenmts in specs
-        # TODO notes - if VM - use bridged... not NAT
 
         # TODO test regular deadnet again
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
@@ -67,7 +65,11 @@ class MainApp(MDApp):
             self.set_ssid_name(ssid_name)  # todo handle if not found
 
             if not self._has_ssid():  # unable to get ssid
-                setup_output = f"{RED}Unable to detect an SSID {COLOR_RESET}"
+                setup_output = f"{RED}Error{COLOR_RESET}: Unable to detect an SSID" \
+                               f"\nPlease make sure of the following:" \
+                               f"{BLUE}*{COLOR_RESET} Device is connected to wifi" \
+                               f"{BLUE}*{COLOR_RESET} Location is enabled" \
+                               f"{BLUE}*{COLOR_RESET} Location permission is granted"
                 # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
                 # todo test for prints if bold even does any effect and remove if not
@@ -101,13 +103,18 @@ class MainApp(MDApp):
         # return True
 
     def on_ref_credit_press(self, *args, **kwargs):
-        import webbrowser # todo move up?
-        webbrowser.open("https://github.com/flashnuke")
+        try:
+            import webbrowser # todo move up?
+            webbrowser.open("https://github.com/flashnuke")
+        except Exception as exc:
+            print("print exc here") # todo print to logcat
 
     def on_start_press(self):
-        # todo: if not defined, then error msg box open
-        # todo: brief popup window of "started"
-        if self._has_root_status():
+        if not self._check_app_conditions(check_root=True, check_ssid=True):
+            return
+        if self._is_deadnet_thread_active():
+            self._toast_msg("Already running")
+        else:
             self._toast_msg("Starting deadnet...")
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
@@ -121,24 +128,17 @@ class MainApp(MDApp):
             self.setup_network_data()
 
     def do_attack(self):
-        if not self._check_app_conditions(check_root=True, check_ssid=True):
-            return
-        if self._has_root_status() and "<unknown ssid>" not in self.ssid_name:
-            with self._abort_lck:
-                if self._deadnet_instance:
-                    return
-                try:
-                    self._deadnet_instance = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
-                                                   self.printf)
-                except Exception as exc:
-                    self.printf(f"error during setup -> {exc}")
-                    return
-            self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
-            self._deadnet_thread.start()
-            # todo: make t a variable that i can stop from elsewherw and wait to finish!@!
-
-# todo wrapper for _has_root_status for all buttons
-# todo otherwise wrapper for is_connected_to_wifi to all buttons
+        with self._abort_lck:
+            if self._deadnet_instance:
+                return
+            try:
+                self._deadnet_instance = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
+                                               self.printf)
+            except Exception as exc:
+                self.printf(f"error during setup -> {exc}")
+                return
+        self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
+        self._deadnet_thread.start()
 
     def on_stop_press(self):
         if not self._check_app_conditions(check_root=True, check_ssid=True):
@@ -170,7 +170,11 @@ class MainApp(MDApp):
 
     def on_start(self):
         # on app start
-        self.setup_network_data()
+        if not self._check_app_conditions(check_root=True, check_ssid=False):
+            err_msg = f"{RED}Error{COLOR_RESET}: Device is not rooted!"
+            self.printf(err_msg)
+        else:
+            self.setup_network_data()
 
 
 if __name__ == "__main__":

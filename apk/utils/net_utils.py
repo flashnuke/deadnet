@@ -127,3 +127,23 @@ def init_gateway():
 
     print(f"@@@@@ FINAL: {[gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface]}")
     return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
+
+
+def get_ipv6_prefdata():
+    prefix = ""
+    preflen = 0
+    try:
+        result = subprocess.run(['su', '-c', 'cat /proc/net/if_inet6'], capture_output=True, text=True)
+        if result.returncode == 0:
+            for line in result.stdout.strip().split('\n'):
+                parts = line.strip().split()
+                if parts[-1] == interface_name:
+                    raw = parts[0]
+                    preflen = int(parts[2], 16)
+                    # Convert raw hex into proper IPv6 format
+                    prefix = ":".join([raw[i:i + 4] for i in range(0, 16, 4)])
+                    prefix = f"{prefix}::"
+                    break
+    except Exception as e:
+        print(f"Error getting IPv6 from /proc: {e}")
+    return prefix, preflen
