@@ -1,4 +1,10 @@
 BoxLayout:
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
     orientation: 'vertical'
     Image:
         source: 'assets/banner.png'
@@ -18,7 +24,7 @@ BoxLayout:
         pos_hint: {'center_x': .5, 'center_y': 1}
         id: output_label
     GridLayout:
-        cols: 2
+        cols: 3
         padding: 33
         size_hint_y: 0.85
         Button:
@@ -28,8 +34,31 @@ BoxLayout:
             size_hint: (0.25, None)
             height: 220
             pos_hint: {'center_x': .5, 'center_y': .5}
-            background_color: [1, 1, 1, 0.15]
+            background_color: [0, 0, 0, 0]
             on_press: app.on_start_press()
+            canvas.before:
+                Color:
+                    rgba: 1,1,1,0.03
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [(30,30), (0,0), (0,0), (30,30)]
+        Button:
+            text: '[color=#0077CC][b]Refresh[/color][/b]'
+            font_size: 65
+            markup: True
+            size_hint: (0.25, None)
+            height: 220
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            background_color: [0, 0, 0, 0]
+            on_press: app.on_refresh_press()
+            canvas.before:
+                Color:
+                    rgba: 1,1,1,0.03
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [0]
         Button:
             text: '[color=#D10000][b]Stop[/color][/b]'
             font_size: 65
@@ -37,8 +66,15 @@ BoxLayout:
             size_hint: (0.25, None)
             height: 220
             pos_hint: {'center_x': .5, 'center_y': .5}
-            background_color: [1, 1, 1, 0.15]
+            background_color: [0, 0, 0, 0]
             on_press: app.on_stop_press()
+            canvas.before:
+                Color:
+                    rgba: 1,1,1,0.03
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [(0,0), (30,30), (30,30), (0,0)]
     Label:
         text: 'written by [color=#4D4FFF][u][ref=https://github.com/flashnuke]@flashnuke[/ref][/color][/u]'
         bold: True

