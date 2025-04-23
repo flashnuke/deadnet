@@ -68,9 +68,9 @@ class MainApp(MDApp):
             if not self._has_ssid():  # unable to get ssid
                 setup_output = f"Unable to detect a wifi connection\n" \
                                f"Please make sure of the following:\n\n" \
-                               f"\t{BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
-                               f"\t{BLUE}*{COLOR_RESET} Location is enabled\n" \
-                               f"\t{BLUE}*{COLOR_RESET} Location permission is granted"
+                               f"   {BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
+                               f"   {BLUE}*{COLOR_RESET} Location is enabled\n" \
+                               f"   {BLUE}*{COLOR_RESET} Location permission is granted"
                 # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
                 # todo test for prints if bold even does any effect and remove if not
