@@ -4,7 +4,7 @@ import subprocess
 from jnius import autoclass
 
 
-def is_unknown_ssid() -> bool:
+def is_unknown_ssid(ssid: str) -> bool:
     if not ssid:
         return True
     ssid_clean = ssid.strip().lower().replace('"', '')
