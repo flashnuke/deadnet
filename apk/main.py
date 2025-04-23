@@ -24,6 +24,7 @@ class MainApp(MDApp):
         # todo remove defined use a different format
         # TODO add versions to all requirements in specs
         # TODO remove not needed requiremenmts in specs
+        # TODO notes - if VM - use bridged... not NAT
 
         # TODO test regular deadnet again
         self._GATEWAY_IPV4 = "undefined"

