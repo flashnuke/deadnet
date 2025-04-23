@@ -67,7 +67,7 @@ class DeadNet:
                 printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
-        printf(f"{GREEN}[+]{WHITE} Setting up attack...")
+        printf(f"{BLUE}[*]{WHITE} Setting up attack...")
         self.abort = False
 
     def get_gateway_mac(self):

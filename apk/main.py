@@ -15,11 +15,13 @@ from kivy.clock import Clock
 from jnius import autoclass
 from scapy.all import *
 
-
+# todo note: pc - executor, more stable to get gateway, etc...
 class MainApp(MDApp):
     def __init__(self, **kwargs):
         # todo try build release
         # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
+        # todo verify sudo for main pc also
+        # todo maybe if clicking on gateway status u can set custom gateway data?
 
         # todo remove defined use a different format
         # TODO add versions to all requirements in specs
