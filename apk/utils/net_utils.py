@@ -14,13 +14,16 @@ def is_unknown_ssid(ssid: str) -> bool:
     return ssid_clean == '<unknown ssid>'
 
 
-def get_device_mac_address(iface: str) -> str:
+def get_device_mac_address_su(iface: str) -> str:
     try:
-        with open(f"/sys/class/net/{iface}/address") as f:
-            return f.read().strip()
+        result = subprocess.run(['su', '-c', f'cat /sys/class/net/{iface}/address'], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            print(f"su command failed: {result.stderr}")
     except Exception as e:
-        print(f"Error reading MAC address for {iface}: {e}")
-        return ""
+        print(f"Error using su to get MAC address: {e}")
+    return ""
 
 
 def get_ssid_name() -> str:

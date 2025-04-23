@@ -49,7 +49,7 @@ class DeadNetAPK:
         conf.iface = self.network_interface
 
         self.print_mtd = print_mtd
-        self.my_mac = get_device_mac_address(self.network_interface)
+        self.my_mac = get_device_mac_address_su(self.network_interface)
         print(f"@@@@@ my_mac {self.my_mac}")
         self.loop_count = 0
 
