@@ -40,7 +40,6 @@ class MainApp(MDApp):
         self._deadnet_instance: Union[None, DeadNetAPK] = None
 
         self._root_status = self._try_root()
-        self._gateway_info = str()  # todo this can be instructions if nto set.. "try location, connect wifi"
 
         super().__init__(**kwargs)
 
@@ -65,21 +64,19 @@ class MainApp(MDApp):
     def setup_network_data(self):
         with self._abort_lck:
             ssid_name = get_ssid_name()
+            self.set_ssid_name(ssid_name)  # todo handle if not found
 
-            if ssid_name == unknown_ssid_name():  # unable to get ssid
-                ssid_name = f"{RED}Unable to detect an SSID (turn on location){COLOR_RESET}"
-                self.clear_output_label()
+            if not self._has_ssid():  # unable to get ssid
+                setup_output = f"{RED}Unable to detect an SSID {COLOR_RESET}"
+                # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
                 # todo test for prints if bold even does any effect and remove if not
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
-                self._gateway_info = f"Net Interface - {BOLD}{self._IFACE}{COLOR_RESET}\n" \
-                                     f"Gateway IPv4 - {BOLD}{self._GATEWAY_IPV4}{COLOR_RESET}\n" \
-                                     f"Gateway IPv6 - {BOLD}{self._GATEWAY_IPV6}{COLOR_RESET}\n" \
-                                     f"Gateway MACaddr - {BOLD}{self._GATEWAY_HWDDR}{COLOR_RESET}"
-                # self.printf(gateway_info)
-            self.set_ssid_name(ssid_name)  # todo handle if not found
-
-            self.printf(self._gateway_info)
+                setup_output = f"Net Interface - {BOLD}{self._IFACE}{COLOR_RESET}\n" \
+                               f"Gateway IPv4 - {BOLD}{self._GATEWAY_IPV4}{COLOR_RESET}\n" \
+                               f"Gateway IPv6 - {BOLD}{self._GATEWAY_IPV6}{COLOR_RESET}\n" \
+                               f"Gateway MACaddr - {BOLD}{self._GATEWAY_HWDDR}{COLOR_RESET}"
+            self.printf(setup_output)
 
     def clear_output_label(self):
         try:
@@ -95,7 +92,7 @@ class MainApp(MDApp):
             pass
 
     def _has_ssid(self):
-        return len(self.ssid_name) != 0  # todo and not "undefined"
+        return not is_unknown_ssid(self.ssid_name)  # todo and not "undefined"
 
     def _has_root_status(self): # todo remove?
         return self._root_status

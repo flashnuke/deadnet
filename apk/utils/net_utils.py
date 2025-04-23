@@ -4,13 +4,11 @@ import subprocess
 from jnius import autoclass
 
 
-def unknown_ssid_name() -> str:
-    WifiManager = autoclass('android.net.wifi.WifiManager')
-    cls = WifiManager.getClass()
-    field = cls.getDeclaredField('UNKNOWN_SSID')
-    field.setAccessible(True)
-    UNKNOWN_SSID = field.get(None)
-    return UNKNOWN_SSID
+def is_unknown_ssid() -> bool:
+    if not ssid:
+        return True
+    ssid_clean = ssid.strip().lower().replace('"', '')
+    return ssid_clean == '<unknown ssid>'
 
 
 def get_ssid_name() -> str:
