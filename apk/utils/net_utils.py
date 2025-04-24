@@ -1,8 +1,10 @@
 import re
 import subprocess
+import traceback
 
 from typing import Tuple
 from jnius import autoclass
+from kivy.logger import Logger
 
 NET_UNDEFINED = "null"
 
@@ -17,29 +19,36 @@ def is_unknown_ssid(ssid: str) -> bool:
 def get_device_mac_address_su(iface: str) -> str:
     try:
         result = subprocess.run(['su', '-c', f'cat /sys/class/net/{iface}/address'], capture_output=True, text=True)
+        Logger.info(f"DeadNet: get_device_mac_address_su cmd result - {result}")
         if result.returncode == 0:
             return result.stdout.strip()
-        else:
-            print(f"su command failed: {result.stderr}")
     except Exception as e:
-        print(f"Error using su to get MAC address: {e}")
+        Logger.error(f"DeadNet: get_device_mac_address_su error {e} - {traceback.format_exc()}")
     return ""
 
 
 def get_ssid_name() -> str:
-    ctx = autoclass('android.content.Context')
-    pa = autoclass('org.kivy.android.PythonActivity')
-    wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
-    wifi_info = wifi_service.getConnectionInfo()
-    ssid_name = wifi_info.getSSID().replace('"', '')
+    ssid_name = NET_UNDEFINED
+    try:
+        ctx = autoclass('android.content.Context')
+        pa = autoclass('org.kivy.android.PythonActivity')
+        wifi_service = pa.mActivity.getSystemService(ctx.WIFI_SERVICE)
+        wifi_info = wifi_service.getConnectionInfo()
+        ssid_name = wifi_info.getSSID().replace('"', '')
+    except Exception as e:
+        Logger.error(f"DeadNet: get_ssid_name error {e} - {traceback.format_exc()}")
     return ssid_name
 
 
 def get_net_iface_name() -> str:
-    result = subprocess.run(['getprop'], capture_output=True, text=True)
-    match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
-    if match:
-        return match.group(1)
+    try:
+        result = subprocess.run(['getprop'], capture_output=True, text=True)
+        Logger.info(f"DeadNet: get_net_iface_name cmd result - {result}")
+        match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
+        if match:
+            return match.group(1)
+    except Exception as e:
+        Logger.error(f"DeadNet: get_net_iface_name error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
 
 
@@ -47,11 +56,9 @@ def get_ipv6_with_su(iface: str) -> str:
     try:
         su_cmd = f"cat /proc/net/if_inet6"
         result = subprocess.run(['su', '-c', su_cmd], capture_output=True, text=True)
-
+        Logger.info(f"DeadNet: get_ipv6_with_su cmd result - {result}")
         if result.returncode != 0:
-            print(f"@@@@@ su command failed: {result.stderr.strip()}")
             return NET_UNDEFINED
-
         for line in result.stdout.strip().splitlines():
             parts = line.strip().split()
             if parts[-1] == iface:
@@ -59,7 +66,7 @@ def get_ipv6_with_su(iface: str) -> str:
                 ipv6 = ':'.join([raw[i:i + 4] for i in range(0, len(raw), 4)])
                 return ipv6
     except Exception as e:
-        print(f"@@@@@ Exception in get_ipv6_with_su: {e}")
+        Logger.error(f"DeadNet: get_ipv6_with_su error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
 
 
@@ -83,20 +90,17 @@ def get_gateway_ipv4() -> str:
             (gw_int >> 24) & 0xFF
         )
         return gw_ip
-    except Exception as exc:
-        print("SDfsdf")
+    except Exception as e:
+        Logger.error(f"DeadNet: get_gateway_ipv4 error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
 
 
 def get_gateway_mac(iface: str) -> str:
     try:
-        # build the su command
         cmd = 'ip neighbor show default'
-        # run it as root
         result = subprocess.run(['su', '-c', cmd], capture_output=True, text=True, check=True)
+        Logger.info(f"DeadNet: get_gateway_mac cmd result - {result}")
         output = result.stdout.strip()
-        print(f"@@@@@ output: {output}")
-
         # parse each line for "lladdr" on our interface
         for line in output.splitlines():
             cols = line.split()
@@ -104,43 +108,25 @@ def get_gateway_mac(iface: str) -> str:
             if len(cols) >= 5 and cols[3] == 'lladdr' and cols[4] != '<incomplete>':
                 if cols[2] == iface:
                     return cols[4]
-    except subprocess.CalledProcessError as e:
-        # ip/ su failed
-        print(f"@@@@@ Error running ip neighbor: {e}")
-    except Exception as exc:
-        # something else went wrong
-        print(f"@@@@@ Unexpected error: {exc}")
+    except Exception as e:
+        Logger.error(f"DeadNet: get_gateway_mac error {e} - {traceback.format_exc()}")
     return None
 
 
-def init_gateway():
-    # todo refactor get details methods to other place?
+def init_gateway() -> Tuple[str, str, str, str]:
     gateway_ipv4 = gateway_ipv6 = iface = gateway_hwaddr = NET_UNDEFINED
 
     try:
-        # Step 1: Get the actual Wi-Fi interface name from getprop
         iface = get_net_iface_name()
         if is_unknown_ssid(iface):
             raise Exception("unable to get iface_name")
-        print(f"@@@@@ iface: {iface}")
-
-        # Step 2: Use Android APIs via pyjnius
-
         gateway_ipv4 = get_gateway_ipv4()
-        print(f"@@@@@ Gateway IPv4 new method: {gateway_ipv4}")
-
-        # Get  = gateway MAC address
         gateway_hwaddr = get_gateway_mac(iface)
-        print(f"@@@@@ gateway_hwaddr: {gateway_hwaddr}")
-
-        # Optional: Try IPv6 using /proc/net/if_inet6
         gateway_ipv6 = get_ipv6_with_su(iface)
-        print(f"@@@@@ gateway_ipv6 (via su): {gateway_ipv6}")
+    except Exception as e:
+        Logger.error(f"DeadNet: init_gateway error {e} - {traceback.format_exc()}")
 
-    except Exception as exc:
-        print(f"@@@@@ Error during init_gateway: {exc}")
-
-    print(f"@@@@@ FINAL: {[gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface]}")
+    Logger.info(f"DeadNet: init_gateway success - {gateway_ipv4} {gateway_ipv6} {gateway_hwaddr} {iface}")
     return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
 
@@ -149,6 +135,7 @@ def get_ipv6_prefdata(interface_name: str) -> Tuple[str, int]:
     preflen = 0
     try:
         result = subprocess.run(['su', '-c', 'cat /proc/net/if_inet6'], capture_output=True, text=True)
+        Logger.info(f"DeadNet: get_ipv6_prefdata cmd result - {result}")
         if result.returncode == 0:
             for line in result.stdout.strip().split('\n'):
                 parts = line.strip().split()
@@ -160,5 +147,7 @@ def get_ipv6_prefdata(interface_name: str) -> Tuple[str, int]:
                     prefix = f"{prefix}::"
                     break
     except Exception as e:
-        print(f"Error getting IPv6 from /proc: {e}")
+        Logger.error(f"DeadNet: get_ipv6_prefdata error {e} - {traceback.format_exc()}")
+
+    Logger.info(f"DeadNet: get_ipv6_prefdata success - {prefix} {preflen}")
     return prefix, preflen

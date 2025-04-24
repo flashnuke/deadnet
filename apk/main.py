@@ -1,6 +1,7 @@
 import re
 import threading
 import subprocess
+import traceback
 
 from utils import *
 from deadnet_apk import DeadNetAPK
@@ -10,7 +11,7 @@ from kivymd.app import MDApp
 from typing import Union
 
 from kivy.clock import Clock
-from kivy.logger import Logger
+from kivy.logger import Logger, LoggerHistory
 
 from jnius import autoclass
 from scapy.all import *
@@ -48,8 +49,11 @@ class MainApp(MDApp):
         try:
             subprocess.call(["su"])  # test root
             return True
-        except (PermissionError, FileNotFoundError):  # todo print exc for logcat
+        except (PermissionError, FileNotFoundError):
+            Logger.error(f"DeadNet: _try_root missing root")
             pass
+        except Exception as e:
+            Logger.error(f"DeadNet: _try_root exception {e} traceback {traceback.format_exc()}")
         return False
 
     def _check_app_conditions(self, check_root: bool, check_ssid: bool):
@@ -81,17 +85,10 @@ class MainApp(MDApp):
             self.printf(setup_output)
 
     def clear_output_label(self):
-        try:
-            self.printf("")  # clear output
-        except Exception as exc:
-            pass
+        self.printf("")  # clear output
 
     def set_ssid_name(self, ssid_name):
-        self.ssid_name = ssid_name
-        try:
-            self.root.ids.ssid_label.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
-        except AttributeError:  # fails on startup - it's ok
-            pass
+        self.root.ids.ssid_label.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
 
     def _has_ssid(self):
         return not is_unknown_ssid(self.ssid_name) and self.ssid_name != NET_UNDEFINED
@@ -103,8 +100,8 @@ class MainApp(MDApp):
         try:
             import webbrowser
             webbrowser.open(self.GH_URL)
-        except Exception as exc:
-            print("print exc here") # todo print to logcat
+        except Exception as e:
+            Logger.error(f"DeadNet: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
 
     def on_start_press(self):
         if not self._check_app_conditions(check_root=True, check_ssid=True):
@@ -130,14 +127,16 @@ class MainApp(MDApp):
                 return
             try:
                 self._deadnet_instance = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
-                                               self.printf)
-            except Exception as exc:
-                self.printf(f"error during setup -> {exc}")
+                                                    self.printf)
+            except Exception as e:
+                Logger.error(f"DeadNet: Exception {e} when starting attack, traceback: {traceback.format_exc()}")
+                self.printf(f"error during setup -> {e}")
                 return
         self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
         self._deadnet_thread.start()
 
     def on_stop_press(self):
+        Logger.info(f"historyyy: {LoggerHistory.history}")
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
 
@@ -165,7 +164,6 @@ class MainApp(MDApp):
             self.root.ids.output_label.text_size = self.root.ids.output_label.size
 
     def on_start(self):
-        Logger.info("123456") # todo del me
         # on app start
         if not self._check_app_conditions(check_root=True, check_ssid=False):
             err_msg = f"{RED}Error{COLOR_RESET}: Device is not rooted!"
