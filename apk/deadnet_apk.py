@@ -8,7 +8,7 @@ import subprocess
 import threading
 import platform as pt
 from kivy.clock import Clock
-from kivy.logger import Logger, LOG_LEVELS
+from kivy.logger import Logger
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
@@ -20,7 +20,6 @@ request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Per
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 # todo is scapy even needed anymore?
 conf.verb = 0  # scapy conf
-Logger.setLevel(LOG_LEVELS["info"])  # todo sort it
 
 
 

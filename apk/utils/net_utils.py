@@ -4,13 +4,13 @@ import traceback
 
 from typing import Tuple
 from jnius import autoclass
-from kivy.logger import Logger, LOG_LEVELS
-Logger.setLevel(LOG_LEVELS["info"]) # todo sort it
+from kivy.logger import Logger
 
 NET_UNDEFINED = "null"
 
 
 def is_unknown_ssid(ssid: str) -> bool:
+    Logger.error("del me")
     if not ssid:
         return True
     ssid_clean = ssid.strip().lower().replace('"', '')
