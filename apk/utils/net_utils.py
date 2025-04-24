@@ -7,6 +7,7 @@ import subprocess
 from typing import Tuple
 from jnius import autoclass
 from kivy.logger import Logger
+from functools import lru_cache
 
 NET_UNDEFINED = "null"
 
@@ -18,6 +19,7 @@ def is_unknown_ssid(ssid: str) -> bool:
     return ssid_clean == '<unknown ssid>'
 
 
+@lru_cache(maxsize=10)
 def get_device_mac_address_su(iface: str) -> str:
     try:
         result = subprocess.run(['su', '-c', f'cat /sys/class/net/{iface}/address'], capture_output=True, text=True)
@@ -29,6 +31,7 @@ def get_device_mac_address_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
+@lru_cache(maxsize=10)
 def get_if_addr(iface: str) -> str:
     result = subprocess.run(['su', '-c', f'ip -4 addr show dev {iface}'],
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
@@ -67,6 +70,7 @@ def get_net_iface_name() -> str:
     return NET_UNDEFINED
 
 
+@lru_cache(maxsize=10)
 def get_ipv6_with_su(iface: str) -> str:
     try:
         su_cmd = f"cat /proc/net/if_inet6"
@@ -83,6 +87,7 @@ def get_ipv6_with_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
+@lru_cache(maxsize=10)
 def mac_to_ipv6_ll(mac: str) -> str:
     try:
         parts = mac.split(':')
@@ -124,6 +129,7 @@ def get_gateway_ipv4() -> str:
     return NET_UNDEFINED
 
 
+@lru_cache(maxsize=10)
 def get_gateway_mac(iface: str) -> str:
     try:
         cmd = 'ip neighbor show default'
@@ -159,6 +165,7 @@ def init_gateway() -> Tuple[str, str, str, str]:
     return gateway_ipv4, gateway_ipv6, gateway_hwaddr, iface
 
 
+@lru_cache(maxsize=10)
 def get_ipv6_prefdata(interface_name: str) -> Tuple[str, int]:
     prefix = ""
     preflen = 0
