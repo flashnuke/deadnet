@@ -137,6 +137,7 @@ class MainApp(MDApp):
 
     def on_stop_press(self):
         Logger.info(f"historyyy: {LoggerHistory.history}")
+        Logger.error(f"testttt")
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
 
