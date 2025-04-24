@@ -206,6 +206,8 @@ class DeadNet:
 if __name__ == "__main__":
     print(f"\n{BANNER}\nWritten by @flashnuke")
     print(DELIM)
+    if os.geteuid() != 0:
+        raise PermissionError(f"Must be run as root")
 
     arguments = define_args()
     invalidate_print()  # after arg parsing

@@ -156,7 +156,7 @@ def get_ipv6_prefdata(interface_name: str) -> Tuple[str, int]:
     return prefix, preflen
 
 
-def generate_random_mac():
+def generate_random_mac() -> str:
     mac = [0x00, 0x16, 0x3e,  # locally administered MAC address range
            random.randint(0x00, 0x7f),
            random.randint(0x00, 0xff),

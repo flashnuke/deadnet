@@ -33,13 +33,9 @@ class MainApp(MDApp):
         # todo test on unrooted phone
         # todo try build release
         # todo verify sudo for main pc also
-        # todo maybe if clicking on gateway status u can set custom gateway data?
 
         # todo remove defined use a different format
-        # TODO add versions to all requirements in specs
-        # TODO remove not needed requiremenmts in specs
 
-        # TODO test regular deadnet again
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
 
@@ -52,7 +48,7 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
 
     @staticmethod
-    def _try_root():
+    def _try_root() ->bool:
         try:
             subprocess.call(["su"])  # test root
             return True
@@ -63,7 +59,7 @@ class MainApp(MDApp):
             Logger.error(f"DeadNet: _try_root exception {e} traceback {traceback.format_exc()}")
         return False
 
-    def _check_app_conditions(self, check_root: bool, check_ssid: bool):
+    def _check_app_conditions(self, check_root: bool, check_ssid: bool) -> bool:
         if check_root and not self._has_root_status():
             self._toast_msg("Error: Device is not rooted")
         elif check_ssid and not self._has_ssid():
@@ -72,7 +68,7 @@ class MainApp(MDApp):
             return True
         return False
 
-    def setup_network_data(self):
+    def setup_network_data(self) -> None:
         with self._abort_lck:
             ssid_name = get_ssid_name()
             self.set_ssid_name(ssid_name)
@@ -91,24 +87,24 @@ class MainApp(MDApp):
                                f"Gateway MACaddr    -    {self._GATEWAY_HWDDR}"
             self.printf(setup_output)
 
-    def set_ssid_name(self, ssid_name: str):
+    def set_ssid_name(self, ssid_name: str) -> None:
         self.ssid_name = ssid_name
         self.root.ids.ssid_label.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
 
-    def _has_ssid(self):
+    def _has_ssid(self) -> bool:
         return not is_unknown_ssid(self.ssid_name) and self.ssid_name != NET_UNDEFINED
 
-    def _has_root_status(self):
+    def _has_root_status(self) -> bool:
         return self._root_status
 
-    def on_ref_credit_press(self):
+    def on_ref_credit_press(self) -> None:
         try:
             import webbrowser
             webbrowser.open(self.GH_URL)
         except Exception as e:
             Logger.error(f"DeadNet: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
 
-    def on_start_press(self):
+    def on_start_press(self) -> None:
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
         if self._is_deadnet_thread_active():
@@ -117,7 +113,7 @@ class MainApp(MDApp):
             self._toast_msg("Starting deadnet...")
             threading.Thread(target=self.do_attack, args=tuple()).start()
 
-    def on_refresh_press(self):
+    def on_refresh_press(self) -> None:
         if not self._check_app_conditions(check_root=True, check_ssid=False):
             return
         if self._is_deadnet_thread_active():
@@ -126,21 +122,7 @@ class MainApp(MDApp):
             self._toast_msg("Refreshing gateway data...")
             self.setup_network_data()
 
-    def do_attack(self):
-        with self._abort_lck:
-            if self._deadnet_instance:
-                return
-            try:
-                self._deadnet_instance = DeadNetAPK(self._IFACE, self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
-                                                    self.printf)
-            except Exception as e:
-                Logger.error(f"DeadNet: Exception {e} when starting attack, traceback: {traceback.format_exc()}")
-                self.printf(f"error during setup -> {e}")
-                return
-        self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
-        self._deadnet_thread.start()
-
-    def on_stop_press(self):
+    def on_stop_press(self) -> None:
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
 
@@ -155,7 +137,7 @@ class MainApp(MDApp):
             else:
                 self._toast_msg("Deadnet is not running")
 
-    def on_debug_press(self):
+    def on_debug_press(self) -> None:
         try:
             # Step 1: Get log messages
             history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
@@ -221,16 +203,30 @@ class MainApp(MDApp):
             print(f"on_debug_press exception: {e}")
             Logger.error(f"DeadNet: on_debug_press failed - {e}")
 
-    @staticmethod
-    def _copy_to_clipboard():
+    def do_attack(self) -> None:
+        with self._abort_lck:
+            if self._deadnet_instance:
+                return
+            try:
+                self._deadnet_instance = DeadNetAPK(self._IFACE,
+                                                    self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
+                                                    self.printf)
+            except Exception as e:
+                Logger.error(f"DeadNet: Exception {e} when starting attack, traceback: {traceback.format_exc()}")
+                self.printf(f"error during setup -> {e}")
+                return
+        self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
+        self._deadnet_thread.start()
+
+    def _copy_to_clipboard(self) -> None:
         Clipboard.copy(debug_text)
         self._toast_msg("Copied to clipboard")
 
     @staticmethod
-    def _toast_msg(msg: str):
+    def _toast_msg(msg: str) -> None:
         toast(msg, duration=2, background=[0, 0, 0, 0.7])
 
-    def _is_deadnet_thread_active(self):
+    def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
 
     def printf(self, text, fit_size=False):
@@ -238,7 +234,7 @@ class MainApp(MDApp):
         if fit_size:
             self.root.ids.output_label.text_size = self.root.ids.output_label.size
 
-    def on_start(self):
+    def on_start(self) -> None:
         # on app start
         if not self._check_app_conditions(check_root=True, check_ssid=False):
             err_msg = f"{RED}Error{COLOR_RESET}: Device is not rooted!"
