@@ -135,7 +135,7 @@ class MainApp(MDApp):
         self._deadnet_thread.start()
 
     def on_stop_press(self):
-        history = [msg for level, msg in LoggerHistory.history]
+        history = [record.msg for record in LoggerHistory.history]
         for msg in history:
             Logger.info(f"historyyy: {msg}")  # todo hist
         Logger.error(f"testttt")
