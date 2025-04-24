@@ -11,10 +11,12 @@ from kivymd.app import MDApp
 from typing import Union
 
 from kivy.clock import Clock
-from kivy.logger import Logger, LoggerHistory
+from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 
 from jnius import autoclass
 from scapy.all import *
+
+Logger.setLevel(LOG_LEVELS["debug"])
 
 
 # todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
