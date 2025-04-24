@@ -135,7 +135,8 @@ class MainApp(MDApp):
         self._deadnet_thread.start()
 
     def on_stop_press(self):
-        history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record]
+        history = [record.msg for record in LoggerHistory.history
+                   if "DeadNet:" in record.msg]  # record type is 'LogRecord'
         for msg in history:
             print(f"historyyy: {msg}")  # todo hist, beware
         print(f"len historyyy {len(history)}")
