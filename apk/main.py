@@ -140,11 +140,6 @@ class MainApp(MDApp):
         self._deadnet_thread.start()
 
     def on_stop_press(self):
-        history = [record.msg for record in LoggerHistory.history
-                   if "DeadNet:" in record.msg]  # record type is 'LogRecord'
-        for msg in history:
-            print(f"historyyy: {msg}")  # todo hist, beware
-        print(f"len historyyy {len(history)}")
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
 
@@ -161,17 +156,20 @@ class MainApp(MDApp):
 
     def on_debug_press(self):
         try:
-            debug_text = "test"
+            debug_text = str()
+            history = [record.msg for record in LoggerHistory.history
+                       if "DeadNet:" in record.msg]  # record type is 'LogRecord'
+            debug_text = "\n".join(history)
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
             label = Label(text=debug_text, font_size=18)
             box.add_widget(label)
 
             btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
 
-            copy_btn = Button(text='Copy', size_hint=(0.5, 1), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            copy_btn = Button(text='Copy', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
             copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
 
-            close_btn = Button(text='Close', size_hint=(0.5, 1), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            close_btn = Button(text='Close', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
             close_btn.bind(on_press=lambda *a: popup.dismiss())
 
             btn_row.add_widget(copy_btn)
@@ -183,7 +181,8 @@ class MainApp(MDApp):
             popup = Popup(title='Debug Output',
                           content=box,
                           size_hint=(0.9, 0.5),
-                          auto_dismiss=False)
+                          auto_dismiss=False,
+                          background_color=(0.2, 0.2, 0.2, 1))
             popup.open()
         except Exception as e:
             Logger.error(f"DeadNet: open_debug_popup failed - {e}")
