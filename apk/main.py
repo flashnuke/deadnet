@@ -159,7 +159,7 @@ class MainApp(MDApp):
         try:
             # Step 1: Get log messages
             history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
-            debug_text = "\n".join(history)
+            debug_text = "\n============\n".join(history)
             print(debug_text)
 
             # Step 2: Main layout
@@ -167,7 +167,7 @@ class MainApp(MDApp):
 
             # Step 3: Label inside ScrollView
             label = Label(
-                text=debug_text or "[no debug info found]",
+                text=debug_text or "[no debug logs found]",
                 font_size=20,
                 color=(1, 1, 1, 1),
                 halign='left',
@@ -186,23 +186,23 @@ class MainApp(MDApp):
 
             copy_btn = Button(
                 text='Copy',
-                size_hint=(0.5, 1),
+                size_hint=(0.5, 0.75),
                 background_color=(0.2, 0.2, 0.2, 1),
-                font_size=20,
+                font_size=30,
                 color=(1, 1, 1, 1)
             )
             copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
 
             close_btn = Button(
                 text='Close',
-                size_hint=(0.5, 1),
+                size_hint=(0.5, 0.75),
                 background_color=(0.2, 0.2, 0.2, 1),
-                font_size=20,
+                font_size=30,
                 color=(1, 1, 1, 1)
             )
             # popup ref needs to be defined above
             popup = Popup(
-                title='',
+                title='Debug logs',
                 content=box,
                 size_hint=(0.9, 0.8),
                 auto_dismiss=False,
