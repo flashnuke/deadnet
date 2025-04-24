@@ -15,8 +15,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
+from kivy.metrics import dp
 
-from kivymd.uix.snackbar import Snackbar
+from kivymd.uix.snackbar import MDSnackbar
 
 
 from kivy.clock import Clock
@@ -218,17 +219,14 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        snackbar = Snackbar(
+        MDSnackbar(
             text=msg,
+            md_bg_color=(0, 0, 0, 0.8),
             duration=2,
-            bg_color=(0, 0, 0, 0.8),
-            snackbar_x="10dp",
-            snackbar_y="10dp"
-        )
-
-        snackbar.size_hint_x = 0.9
-        snackbar.pos_hint = {"center_x": 0.5}
-        snackbar.open()
+            y=dp(10),  # vertical offset
+            pos_hint={"center_x": 0.5},  # now honored!
+            size_hint_x=0.9,  # 90% width
+        ).open()
         # toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
 
     def _is_deadnet_thread_active(self) -> bool:
