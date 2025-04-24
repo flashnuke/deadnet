@@ -83,17 +83,17 @@ class DeadNetAPK:
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
-        self._intro = str()
+        self._intro = f"MAC address gateway - {self._gateway_mac}\n\n"
         if self._spoof_ipv6ra:
             self._intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
-                          f"IPv6 prefix - {self._ipv6_prefix}/{self._ipv6_preflen}\n" \
-                          f"IPv6 gateway - {self._gateway_ipv6}\n\n"
+                           f"IPv6 prefix - {self._ipv6_prefix}/{self._ipv6_preflen}\n" \
+                           f"IPv6 gateway - {self._gateway_ipv6}\n\n"
         else:
             self._intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
 
         self._intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
-                      f"IPv4 subnet range - {subnet_ipv4_sr}\n" \
-                      f"IPv4 gateway - {self._gateway_ipv4}\n\n"
+                       f"IPv4 subnet range - {subnet_ipv4_sr}\n" \
+                       f"IPv4 gateway - {self._gateway_ipv4}\n\n"
 
     def _prepare_binaries(self, arch_type: str) -> bool:
         try:
@@ -171,6 +171,6 @@ class DeadNetAPK:
                 self.user_abort()
 
         if self._abort != self._user_abort_reason:
-            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._abort}", True))
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._abort}"))
         else:
             Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}{self._abort}"))
