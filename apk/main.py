@@ -163,7 +163,16 @@ class MainApp(MDApp):
             print("kaka")
             print(debug_text)
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
-            label = Label(text=debug_text, font_size=36)
+            label = Label(
+                text=debug_text,
+                font_size=30,
+                color=(1, 1, 1, 1),  # white text
+                text_size=(self.root.width * 0.8, None),  # force wrapping
+                halign='left',
+                valign='top',
+                size_hint_y=None
+            )
+            label.bind(texture_size=label.setter('size'))  # autosize vertically
             box.add_widget(label)
 
             btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
@@ -183,11 +192,11 @@ class MainApp(MDApp):
             popup = Popup(title='Debug Output',
                           content=box,
                           size_hint=(0.9, 0.5),
-                          auto_dismiss=False,
+                          auto_dismiss=True,
                           background_color=(0.2, 0.2, 0.2, 1))
             popup.open()
         except Exception as e:
-            Logger.error(f"DeadNet: open_debug_popup failed - {e}")
+            Logger.error(f"DeadNet: on_debug_press failed - {e}")
 
     @staticmethod
     def _toast_msg(msg: str):
