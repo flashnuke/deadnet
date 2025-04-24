@@ -19,17 +19,27 @@ The following tools are required:
 ### Compiling the C++ Binaries
 The C++ binaries source code files (`src/arp.cpp` for the ARP poisoning and `src/nra.cpp` for the dead router attack) should be compiled by NDK:
 ```bash
-cd deadnet/apk
+# after cloning
 
-$NDK_PATH/bin/aarch64-linux-android29-clang++ -static -o assets/nra.arm64 src/nra.cpp
-$NDK_PATH/bin/armv7a-linux-androideabi29-clang++ -static -o assets/nra.arm src/nra.cpp
-$NDK_PATH/bin/i686-linux-android29-clang++ -static -o assets/nra.x86 src/nra.cpp
-$NDK_PATH/bin/x86_64-linux-android29-clang++ -static -o assets/nra.x86_64 src/nra.cpp
 
-$NDK_PATH/bin/aarch64-linux-android29-clang++ -static -o assets/arp.arm64 src/arp.cpp
-$NDK_PATH/bin/armv7a-linux-androideabi29-clang++ -static -o assets/arp.arm src/arp.cpp
-$NDK_PATH/bin/i686-linux-android29-clang++ -static -o assets/arp.x86 src/arp.cpp
-$NDK_PATH/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/arp.cpp
+mkdir android-ndk && cd android-ndk
+wget https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+unzip android-ndk-r26d-linux.zip
+export NDK_PATH=$(pwd)/android-ndk-r26d
+
+
+# compile binaries
+cd <path_to_deadnet_root>/apk
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang++ -static -o assets/nra.arm64 src/nra.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi29-clang++ -static -o assets/nra.arm src/nra.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android29-clang++ -static -o assets/nra.x86 src/nra.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang++ -static -o assets/nra.x86_64 src/nra.cpp
+
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang++ -static -o assets/arp.arm64 src/arp.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi29-clang++ -static -o assets/arp.arm src/arp.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android29-clang++ -static -o assets/arp.x86 src/arp.cpp
+$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/arp.cpp
+
 
 # NDK_PATH example: "NDK_PATH=/home/ubuntu/my-android-toolchain"
 ```

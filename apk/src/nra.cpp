@@ -16,7 +16,6 @@ struct nd_opt_slla {
 
 int main(int argc, char* argv[]) {
     if (argc != 6) {
-        std::cerr << "Usage: " << argv[0] << " <MAC address> <IPv6 address> <IPv6 prefix> <IPv6 preflen> <iface>\n";
         return 1;
     }
 
