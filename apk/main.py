@@ -29,9 +29,9 @@ class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
+        # todo test functionality after removign scapy / RandMAC
         # todo test on unrooted phone
         # todo try build release
-        # todo many prints for logcat... maybe debug button? (press refresh 7 times for debug mode?)
         # todo verify sudo for main pc also
         # todo maybe if clicking on gateway status u can set custom gateway data?
 
@@ -191,7 +191,7 @@ class MainApp(MDApp):
                 font_size=30,
                 color=(1, 1, 1, 1)
             )
-            copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
+            copy_btn.bind(on_press=self._copy_to_clipboard)
 
             close_btn = Button(
                 text='Close',
@@ -220,6 +220,11 @@ class MainApp(MDApp):
         except Exception as e:
             print(f"on_debug_press exception: {e}")
             Logger.error(f"DeadNet: on_debug_press failed - {e}")
+
+    @staticmethod
+    def _copy_to_clipboard():
+        Clipboard.copy(debug_text)
+        self._toast_msg("Copied to clipboard")
 
     @staticmethod
     def _toast_msg(msg: str):
