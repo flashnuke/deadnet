@@ -16,7 +16,7 @@ from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from jnius import autoclass
 from scapy.all import *
 
-Logger.setLevel(LOG_LEVELS["debug"])
+Logger.setLevel(LOG_LEVELS["error"])
 
 
 # todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
@@ -140,6 +140,8 @@ class MainApp(MDApp):
     def on_stop_press(self):
         Logger.info(f"historyyy: {LoggerHistory.history}")
         Logger.error(f"testttt")
+        Logger.info(f"gagagagaga")
+
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
 
