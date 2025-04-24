@@ -172,7 +172,7 @@ class MainApp(MDApp):
                 font_size=30,
                 color=(1, 1, 1, 1)
             )
-            copy_btn.bind(on_press=self._copy_to_clipboard)
+            copy_btn.bind(on_press=lambda *a: self._copy_to_clipboard(debug_text))
 
             close_btn = Button(
                 text='Close',
@@ -217,8 +217,8 @@ class MainApp(MDApp):
         self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
         self._deadnet_thread.start()
 
-    def _copy_to_clipboard(self, *_) -> None:
-        Clipboard.copy(debug_text)
+    def _copy_to_clipboard(self, text: str) -> None:
+        Clipboard.copy(text)
         self._toast_msg("Copied to clipboard")
 
     @staticmethod
