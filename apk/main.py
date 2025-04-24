@@ -35,7 +35,9 @@ class MainApp(MDApp):
         # todo try build release
         # todo - try stopping while sleeping and stopping while attacking
         # todo - printing debug logs backwards
-        # todo - pass iface name
+        # todo - refresh after attacking once... or better yet, store the original MAC addr to a runtime dict
+        #  mapped to the interface, otherwise stop and play would not work! also save ipv6!
+        # todo - try playing after u did stop?? sometimes it freezes altogether
 
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
