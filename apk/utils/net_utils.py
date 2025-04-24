@@ -28,7 +28,7 @@ def get_device_mac_address_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
-def get_if_addr(iface: str) -> Optional[str]:
+def get_if_addr(iface: str) -> str:
     result = subprocess.run(['su', '-c', f'ip -4 addr show dev {iface}'],
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
     match = re.search(r'inet\s+(\d+\.\d+\.\d+\.\d+)', result.stdout)
