@@ -32,7 +32,6 @@ class MainApp(MDApp):
         # todo test functionality after removign scapy / RandMAC
         # todo test on unrooted phone
         # todo try build release
-        # todo verify sudo for main pc also
 
         # todo remove defined use a different format
 
@@ -48,7 +47,7 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
 
     @staticmethod
-    def _try_root() ->bool:
+    def _try_root() -> bool:
         try:
             subprocess.call(["su"])  # test root
             return True
@@ -218,7 +217,7 @@ class MainApp(MDApp):
         self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
         self._deadnet_thread.start()
 
-    def _copy_to_clipboard(self) -> None:
+    def _copy_to_clipboard(self, *_) -> None:
         Clipboard.copy(debug_text)
         self._toast_msg("Copied to clipboard")
 
