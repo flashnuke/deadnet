@@ -10,6 +10,7 @@ from kivymd.app import MDApp
 from typing import Union
 
 from kivy.clock import Clock
+from kivy.logger import Logger
 
 from jnius import autoclass
 from scapy.all import *
@@ -71,14 +72,12 @@ class MainApp(MDApp):
                                f"   {BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
                                f"   {BLUE}*{COLOR_RESET} Location is enabled\n" \
                                f"   {BLUE}*{COLOR_RESET} Location permission is granted"
-                # todo (turn on location) otherwise print info otherwise...
             else:  # has ssid
-                # todo test for prints if bold even does any effect and remove if not
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
-                setup_output = f"Net Interface - {BOLD}{self._IFACE}{COLOR_RESET}\n" \
-                               f"Gateway IPv4 - {BOLD}{self._GATEWAY_IPV4}{COLOR_RESET}\n" \
-                               f"Gateway IPv6 - {BOLD}{self._GATEWAY_IPV6}{COLOR_RESET}\n" \
-                               f"Gateway MACaddr - {BOLD}{self._GATEWAY_HWDDR}{COLOR_RESET}"
+                setup_output = f"Net Interface - {self._IFACE}\n" \
+                               f"Gateway IPv4 - {self._GATEWAY_IPV4}\n" \
+                               f"Gateway IPv6 - {self._GATEWAY_IPV6}\n" \
+                               f"Gateway MACaddr - {self._GATEWAY_HWDDR}"
             self.printf(setup_output)
 
     def clear_output_label(self):
@@ -166,6 +165,7 @@ class MainApp(MDApp):
             self.root.ids.output_label.text_size = self.root.ids.output_label.size
 
     def on_start(self):
+        Logger.info("123456") # todo del me
         # on app start
         if not self._check_app_conditions(check_root=True, check_ssid=False):
             err_msg = f"{RED}Error{COLOR_RESET}: Device is not rooted!"
