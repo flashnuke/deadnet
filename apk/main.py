@@ -160,16 +160,18 @@ class MainApp(MDApp):
             history = [record.msg for record in LoggerHistory.history
                        if "DeadNet:" in record.msg]  # record type is 'LogRecord'
             debug_text = "\n".join(history)
+            print("kaka")
+            print(debug_text)
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
-            label = Label(text=debug_text, font_size=18)
+            label = Label(text=debug_text, font_size=36)
             box.add_widget(label)
 
             btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
 
-            copy_btn = Button(text='Copy', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            copy_btn = Button(text='Copy', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=36)
             copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
 
-            close_btn = Button(text='Close', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            close_btn = Button(text='Close', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=36)
             close_btn.bind(on_press=lambda *a: popup.dismiss())
 
             btn_row.add_widget(copy_btn)
