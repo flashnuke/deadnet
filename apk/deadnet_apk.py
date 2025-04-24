@@ -44,7 +44,6 @@ class DeadNetAPK:
         self._max_workers = 3
 
         self._network_interface = iface
-        conf.iface = self._network_interface
 
         self.print_mtd = print_mtd
         self._my_mac = get_device_mac_address_su(self._network_interface)
