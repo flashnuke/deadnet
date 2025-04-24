@@ -30,13 +30,10 @@ class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
-        # todo test functionality after removign scapy / RandMAC
-        # todo test on unrooted phone
-        # todo try build release
-        # todo - try stopping while sleeping and stopping while attacking
-        # todo - printing debug logs backwards
-        # todo - refresh after attacking once... or better yet, store the original MAC addr to a runtime dict
-        #  mapped to the interface, otherwise stop and play would not work! also save ipv6!
+        # todo test functionality - final
+        # todo test on unrooted phone - final
+        # todo better docs and new pic in readme - final
+
         # todo - try playing after u did stop?? sometimes it freezes altogether
 
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
