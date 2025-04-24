@@ -222,18 +222,22 @@ class MainApp(MDApp):
     def _toast_msg(msg: str) -> None:
         print("called toast")
         MDSnackbar(
-            # 1) Your content widget:
             MDLabel(
                 text=msg,
                 theme_text_color="Custom",
-                text_color=(1, 1, 1, 1),  # white text
+                text_color=(1, 1, 1, 1),
+                size_hint_x=1,
+                halign='center',
+                valign='center',
+                adaptive_height=True,
             ),
-            # 2) Styling props:
-            bg_color=(0, 0, 0, 0.8),  # semi-transparent black
+            bg_color=(0, 0, 0, 0.8),
             duration=2,
-            y=dp(10),
-            pos_hint={"center_x": 0.5},
+            pos_hint={'center_x': 0.5},
             size_hint_x=0.9,
+            snackbar_y=dp(10),
+            radius=[16, 16, 16, 16],
+            elevation=6,
         ).open()
         # toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
 
