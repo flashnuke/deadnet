@@ -60,7 +60,7 @@ class DeadNetAPK:
         self.loop_count = 0
 
         self.abort = str()
-        self.user_abort_reason = f"status - {RED}stopped{COLOR_RESET}"
+        self.user_abort_reason = f"status    -    {RED}stopped{COLOR_RESET}"
 
         self.arch_type = self._BINARY_MAP.get(pt.machine())
         if not self.arch_type:
@@ -94,15 +94,15 @@ class DeadNetAPK:
 
         self.intro = str()
         if self.spoof_ipv6ra:
-            self.intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
-                          f"IPv6 prefix - {self.ipv6_prefix}/{self.ipv6_preflen}\n" \
-                          f"IPv6 gateway - {self.gateway_ipv6}\n\n"
+            self.intro += f"Dead router attack (IPv6)    -    {GREEN}enabled{COLOR_RESET}\n" \
+                          f"IPv6 prefix    -    {self.ipv6_prefix}/{self.ipv6_preflen}\n" \
+                          f"IPv6 gateway    -    {self.gateway_ipv6}\n\n"
         else:
-            self.intro += f"Dead router attack (IPv6) - {RED}disabled{COLOR_RESET}\n\n"
+            self.intro += f"Dead router attack (IPv6)    -    {RED}disabled{COLOR_RESET}\n\n"
 
-        self.intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
-                      f"IPv4 subnet range - {self.subnet_ipv4_sr}\n" \
-                      f"IPv4 gateway - {self.gateway_ipv4}\n\n"
+        self.intro += f"ARP poisoning (IPv4)    -    {GREEN}enabled{COLOR_RESET}\n" \
+                      f"IPv4 subnet range    -    {self.subnet_ipv4_sr}\n" \
+                      f"IPv4 gateway    -    {self.gateway_ipv4}\n\n"
 
     def _prepare_binaries(self):
         try:
@@ -161,7 +161,7 @@ class DeadNetAPK:
                 if self.abort:
                     return
                 executor.submit(self.worker_attack_task, idx, ip)
-                Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}status - {GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
+                Clock.schedule_once(lambda dt: self.print_mtd(f"{self.intro}status    -    {GREEN}running...{COLOR_RESET} cycle #{self.loop_count} "
                                                               f"{GRAY}[{idx + 1} / {len(self.host_ipv4s)}]{COLOR_RESET}"))
 
                 time.sleep(self._executor_sleep_interval)

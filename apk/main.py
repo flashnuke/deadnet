@@ -75,15 +75,15 @@ class MainApp(MDApp):
             if not self._has_ssid():  # unable to get ssid
                 setup_output = f"Unable to detect a wifi connection\n" \
                                f"Please make sure of the following:\n\n" \
-                               f"   {BLUE}*{COLOR_RESET} Device is connected to wifi\n" \
-                               f"   {BLUE}*{COLOR_RESET} Location is enabled\n" \
-                               f"   {BLUE}*{COLOR_RESET} Location permission is granted"
+                               f"    {BLUE}*{COLOR_RESET}    Device is connected to wifi\n" \
+                               f"    {BLUE}*{COLOR_RESET}    Location is enabled\n" \
+                               f"    {BLUE}*{COLOR_RESET}    Location permission is granted"
             else:  # has ssid
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
-                setup_output = f"Net Interface    -   {self._IFACE}\n" \
-                               f"Gateway IPv4    -   {self._GATEWAY_IPV4}\n" \
-                               f"Gateway IPv6    -   {self._GATEWAY_IPV6}\n" \
-                               f"Gateway MACaddr    -   {self._GATEWAY_HWDDR}"
+                setup_output = f"Net Interface    -    {self._IFACE}\n" \
+                               f"Gateway IPv4    -    {self._GATEWAY_IPV4}\n" \
+                               f"Gateway IPv6    -    {self._GATEWAY_IPV6}\n" \
+                               f"Gateway MACaddr    -    {self._GATEWAY_HWDDR}"
             self.printf(setup_output)
 
     def set_ssid_name(self, ssid_name: str):
