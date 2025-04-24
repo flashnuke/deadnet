@@ -163,7 +163,7 @@ class MainApp(MDApp):
 
     def on_debug_press(self):
         try:
-            debug_text = self.generate_debug_text()
+            debug_text = "self.generate_debug_text()"
 
             # Root container for popup
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
@@ -171,7 +171,7 @@ class MainApp(MDApp):
             # Background dark theme using canvas
             with box.canvas.before:
                 Color(0.1, 0.1, 0.1, 0.95)  # dark background
-                self._bg_rect = RoundedRectangle(radius=[20])
+                self._bg_rect = RoundedRectangle(radius=[20]) # todo bg rect define and comment
             box.bind(pos=self._update_bg, size=self._update_bg)
 
             # Debug message (use a label or TextInput if you want selection)
