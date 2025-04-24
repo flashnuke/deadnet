@@ -1,5 +1,6 @@
 import re
 import random
+import ipaddress
 import traceback
 import subprocess
 
@@ -82,6 +83,27 @@ def get_ipv6_with_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
+def get_ipv6_gateway_via_proc_su(iface: str) -> str:
+    try:
+        result = subprocess.run(['su', '-c', 'cat /proc/net/ipv6_route'],
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 7:
+                continue
+            dest, dest_pref, _, _, gateway_hex, _, route_iface = parts[:7]
+            if dest == '0' * 32 and dest_pref == '00' and route_iface == iface:
+                try:
+                    gw_addr = str(ipaddress.IPv6Address(gateway_hex.zfill(32)))
+                    return gw_addr
+                except ipaddress.AddressValueError:
+                    return None
+    except Exception as e:
+        Logger.error(f"DeadNet: get_gateway_ipv4 error {e} - {traceback.format_exc()}")
+    return NET_UNDEFINED
+
+
+# usage
 def get_gateway_ipv4() -> str:
     try:
         # grab the Android activity and Wi‑Fi service
@@ -122,7 +144,7 @@ def get_gateway_mac(iface: str) -> str:
                     return cols[4]
     except Exception as e:
         Logger.error(f"DeadNet: get_gateway_mac error {e} - {traceback.format_exc()}")
-    return None
+    return NET_UNDEFINED
 
 
 def init_gateway() -> Tuple[str, str, str, str]:
@@ -134,7 +156,7 @@ def init_gateway() -> Tuple[str, str, str, str]:
             raise Exception("unable to get iface_name")
         gateway_ipv4 = get_gateway_ipv4()
         gateway_hwaddr = get_gateway_mac(iface)
-        gateway_ipv6 = get_ipv6_with_su(iface)
+        gateway_ipv6 = get_ipv6_gateway_via_proc_su(iface)
     except Exception as e:
         Logger.error(f"DeadNet: init_gateway error {e} - {traceback.format_exc()}")
 

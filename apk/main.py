@@ -33,7 +33,7 @@ class MainApp(MDApp):
         # todo test functionality after removign scapy / RandMAC
         # todo test on unrooted phone
         # todo try build release
-
+        # todo - try stopping while sleeping and stopping while attacking
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
 
