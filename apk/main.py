@@ -15,9 +15,10 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
-from kivy.metrics import dp
 
 from kivymd.uix.snackbar import MDSnackbar
+from kivymd.uix.label import MDLabel
+from kivy.metrics import dp
 
 
 from kivy.clock import Clock
@@ -221,12 +222,18 @@ class MainApp(MDApp):
     def _toast_msg(msg: str) -> None:
         print("called toast")
         MDSnackbar(
-            text=msg,
-            md_bg_color=(0, 0, 0, 0.8),
+            # 1) Your content widget:
+            MDLabel(
+                text=msg,
+                theme_text_color="Custom",
+                text_color=(1, 1, 1, 1),  # white text
+            ),
+            # 2) Styling props:
+            bg_color=(0, 0, 0, 0.8),  # semi-transparent black
             duration=2,
-            y=dp(10),  # vertical offset
-            pos_hint={"center_x": 0.5},  # now honored!
-            size_hint_x=0.9,  # 90% width
+            y=dp(10),
+            pos_hint={"center_x": 0.5},
+            size_hint_x=0.9,
         ).open()
         # toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
 
