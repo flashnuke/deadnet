@@ -216,7 +216,7 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        toast(msg, duration=2, background=[0, 0, 0, 1])  # todo check if neede to revert to 0.7
+        toast(msg, duration=2, background=[0, 0, 0, 1])
 
     def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
