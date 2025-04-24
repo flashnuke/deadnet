@@ -144,6 +144,7 @@ class MainApp(MDApp):
         try:
             # Step 1: Get log messages
             history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
+            history.reverse()
             debug_text = "\n============\n".join(history)
             print(debug_text)
 
