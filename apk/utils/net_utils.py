@@ -43,10 +43,12 @@ def get_ssid_name() -> str:
 def get_net_iface_name() -> str:
     try:
         result = subprocess.run(['getprop'], capture_output=True, text=True)
-        Logger.info(f"DeadNet: get_net_iface_name cmd result - {result}")
         match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
         if match:
+            Logger.info(f"DeadNet: get_net_iface_name cmd result success")  # avoid printing if match - too much spam
             return match.group(1)
+        else:
+            Logger.error(f"DeadNet: get_net_iface_name cmd missing match, result - {result}")
     except Exception as e:
         Logger.error(f"DeadNet: get_net_iface_name error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
