@@ -54,6 +54,8 @@ class DeadNetAPK:
 
         self.print_mtd = print_mtd
         self.my_mac = get_device_mac_address_su(self.network_interface)
+        if self.my_mac == NET_UNDEFINED:
+            raise Exception("Failed to get device MAC address")
         Logger.info(f"DeadNet: Set up user mac as {self.my_mac}")
         self.loop_count = 0
 

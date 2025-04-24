@@ -80,10 +80,10 @@ class MainApp(MDApp):
                                f"   {BLUE}*{COLOR_RESET} Location permission is granted"
             else:  # has ssid
                 self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR, self._IFACE = init_gateway()
-                setup_output = f"Net Interface - {self._IFACE}\n" \
-                               f"Gateway IPv4 - {self._GATEWAY_IPV4}\n" \
-                               f"Gateway IPv6 - {self._GATEWAY_IPV6}\n" \
-                               f"Gateway MACaddr - {self._GATEWAY_HWDDR}"
+                setup_output = f"Net Interface {self._IFACE.rjust(40)}\n" \
+                               f"Gateway IPv4 {self._GATEWAY_IPV4.rjust(40)}\n" \
+                               f"Gateway IPv6 {self._GATEWAY_IPV6.rjust(40)}\n" \
+                               f"Gateway MACaddr {self._GATEWAY_HWDDR.rjust(40)}"
             self.printf(setup_output)
 
     def set_ssid_name(self, ssid_name: str):
@@ -136,7 +136,7 @@ class MainApp(MDApp):
         self._deadnet_thread.start()
 
     def on_stop_press(self):
-        Logger.info(f"historyyy: {LoggerHistory.history}")
+        Logger.info(f"historyyy: {LoggerHistory.history}") # todo hist
         Logger.error(f"testttt")
         Logger.info(f"gagagagaga")
 
