@@ -30,6 +30,7 @@ class MainApp(MDApp):
 
     def __init__(self, **kwargs):
         # todo test functionality after removign scapy / RandMAC
+        # todo test on unrooted phone
         # todo try build release
 
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
@@ -214,7 +215,7 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        toast(msg, duration=2, background=[0, 0, 0, 0.9])  # todo check if neede to revert to 0.7
+        toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
 
     def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
