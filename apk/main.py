@@ -33,8 +33,6 @@ class MainApp(MDApp):
         # todo test on unrooted phone
         # todo try build release
 
-        # todo remove defined use a different format
-
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
 
@@ -143,10 +141,8 @@ class MainApp(MDApp):
             debug_text = "\n============\n".join(history)
             print(debug_text)
 
-            # Step 2: Main layout
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
 
-            # Step 3: Label inside ScrollView
             label = Label(
                 text=debug_text or "[no debug logs found]",
                 font_size=20,
@@ -162,7 +158,6 @@ class MainApp(MDApp):
             scroll.add_widget(label)
             box.add_widget(scroll)
 
-            # Step 4: Buttons row
             btn_row = BoxLayout(size_hint=(1, 0.2), spacing=10)
 
             copy_btn = Button(
@@ -181,7 +176,6 @@ class MainApp(MDApp):
                 font_size=30,
                 color=(1, 1, 1, 1)
             )
-            # popup ref needs to be defined above
             popup = Popup(
                 title='Debug logs',
                 content=box,
@@ -195,7 +189,6 @@ class MainApp(MDApp):
             btn_row.add_widget(close_btn)
             box.add_widget(btn_row)
 
-            # Step 5: Open the popup
             popup.open()
 
         except Exception as e:
@@ -223,7 +216,7 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        toast(msg, duration=2, background=[0, 0, 0, 0.7])
+        toast(msg, duration=2, background=[0, 0, 0, 1])
 
     def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
