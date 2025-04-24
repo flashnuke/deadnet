@@ -77,7 +77,7 @@ class DeadNetAPK:
         device_ipv4 = get_if_addr(self._network_interface)
         if device_ipv4 == NET_UNDEFINED:
             raise Exception(f"Unable to get device_ipv4")
-        Logger.info(f"DeadNet: device_ipv4 set to {self._device_ipv4}")
+        Logger.info(f"DeadNet: device_ipv4 set to {device_ipv4}")
         subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
         Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
