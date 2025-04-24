@@ -105,12 +105,6 @@ class MainApp(MDApp):
             Logger.error(f"DeadNet: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
 
     def on_start_press(self) -> None:
-        Snackbar(
-            text="Copied to clipboard",
-            duration=1.5,  # duration in seconds
-            bg_color=(0, 0, 0, 0.8)
-        ).open()
-        return
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
         if self._is_deadnet_thread_active():
@@ -224,7 +218,18 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
+        snackbar = Snackbar(
+            text=msg,
+            duration=2,
+            bg_color=(0, 0, 0, 0.8),
+            snackbar_x="10dp",
+            snackbar_y="10dp"
+        )
+
+        snackbar.size_hint_x = 0.9
+        snackbar.pos_hint = {"center_x": 0.5}
+        snackbar.open()
+        # toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
 
     def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
