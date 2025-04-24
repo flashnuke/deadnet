@@ -82,7 +82,7 @@ class MainApp(MDApp):
                 setup_output = f"Net Interface    -    {self._IFACE}\n" \
                                f"Gateway IPv4    -    {self._GATEWAY_IPV4}\n" \
                                f"Gateway IPv6    -    {self._GATEWAY_IPV6}\n" \
-                               f"Gateway MACaddr    -    {self._GATEWAY_HWDDR}"
+                               f"Gateway lladdr    -    {self._GATEWAY_HWDDR}"
             self.printf(setup_output)
 
     def set_ssid_name(self, ssid_name: str) -> None:

@@ -83,7 +83,7 @@ class DeadNetAPK:
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
-        self._intro = f"MAC address gateway - {self._gateway_mac}\n\n"
+        self._intro = str()
         if self._spoof_ipv6ra:
             self._intro += f"Dead router attack (IPv6) - {GREEN}enabled{COLOR_RESET}\n" \
                            f"IPv6 prefix - {self._ipv6_prefix}/{self._ipv6_preflen}\n" \
@@ -94,6 +94,7 @@ class DeadNetAPK:
         self._intro += f"ARP poisoning (IPv4) - {GREEN}enabled{COLOR_RESET}\n" \
                        f"IPv4 subnet range - {subnet_ipv4_sr}\n" \
                        f"IPv4 gateway - {self._gateway_ipv4}\n\n"
+        self._intro += f"lladdr gateway - {self._gateway_mac}\n\n"
 
     def _prepare_binaries(self, arch_type: str) -> bool:
         try:
