@@ -4,7 +4,7 @@ import traceback
 
 from typing import Tuple
 from jnius import autoclass
-from kivy.logger import Logger
+from kivy.logger import Logger, LOG_LEVELS
 Logger.setLevel(LOG_LEVELS["info"]) # todo sort it
 
 NET_UNDEFINED = "null"
