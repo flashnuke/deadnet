@@ -160,13 +160,24 @@ class MainApp(MDApp):
     def on_debug_press(self):
         try:
             debug_text = "test"
-
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
-            box.add_widget(Label(text=debug_text, font_size=18))
+            label = Label(text=debug_text, font_size=18)
+            box.add_widget(label)
 
-            close_btn = Button(text='Close', size_hint=(1, 0.3), on_press=lambda *a: popup.dismiss())
-            box.add_widget(close_btn)
+            btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
 
+            copy_btn = Button(text='Copy')
+            copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
+
+            close_btn = Button(text='Close')
+            close_btn.bind(on_press=lambda *a: popup.dismiss())
+
+            btn_row.add_widget(copy_btn)
+            btn_row.add_widget(close_btn)
+
+            box.add_widget(btn_row)
+
+            # Create and open popup
             popup = Popup(title='Debug Output',
                           content=box,
                           size_hint=(0.9, 0.5),
