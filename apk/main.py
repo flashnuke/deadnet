@@ -16,6 +16,9 @@ from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
 
+from kivymd.uix.snackbar import Snackbar
+
+
 from kivy.clock import Clock
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 
@@ -102,6 +105,11 @@ class MainApp(MDApp):
             Logger.error(f"DeadNet: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
 
     def on_start_press(self) -> None:
+        Snackbar(
+            text="Copied to clipboard",
+            duration=1.5,  # duration in seconds
+            bg_color=(0, 0, 0, 0.8)
+        ).open()
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
         if self._is_deadnet_thread_active():
