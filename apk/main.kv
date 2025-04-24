@@ -74,6 +74,24 @@ BoxLayout:
                     pos: self.pos
                     size: self.size
                     radius: [(0,0), (30,30), (30,30), (0,0)]
+            BoxLayout:
+        size_hint_y: None
+        height: 110
+        padding: [33, 10]
+        Button:
+            text: '[color=#FFFFFF][b]Debug Info[/b][/color]'
+            font_size: 30
+            markup: True
+            size_hint: (1, 1)
+            background_color: [0, 0, 0, 0]
+            on_press: app.open_debug_popup()
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 0.05
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [15]
     Label:
         text: 'written by [color=#4D4FFF][u][ref=https://github.com/flashnuke]@flashnuke[/ref][/color][/u]'
         bold: True

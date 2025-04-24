@@ -154,6 +154,24 @@ class MainApp(MDApp):
             else:
                 self._toast_msg("Deadnet is not running")
 
+    def on_debug_press(self):
+        try:
+            debug_text = "test"
+
+            box = BoxLayout(orientation='vertical', padding=20, spacing=20)
+            box.add_widget(Label(text=debug_text, font_size=18))
+
+            close_btn = Button(text='Close', size_hint=(1, 0.3), on_press=lambda *a: popup.dismiss())
+            box.add_widget(close_btn)
+
+            popup = Popup(title='Debug Output',
+                          content=box,
+                          size_hint=(0.9, 0.5),
+                          auto_dismiss=False)
+            popup.open()
+        except Exception as e:
+            Logger.error(f"DeadNet: open_debug_popup failed - {e}")
+
     @staticmethod
     def _toast_msg(msg: str):
         toast(msg, duration=2, background=[0, 0, 0, 0.7])
