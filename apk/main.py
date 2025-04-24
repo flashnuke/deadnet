@@ -14,6 +14,7 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
+from kivy.uix.scrollview import ScrollView
 
 from kivy.clock import Clock
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
@@ -156,46 +157,68 @@ class MainApp(MDApp):
 
     def on_debug_press(self):
         try:
-            debug_text = str()
-            history = [record.msg for record in LoggerHistory.history
-                       if "DeadNet:" in record.msg]  # record type is 'LogRecord'
+            # Step 1: Get log messages
+            history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
             debug_text = "\n".join(history)
-            print("kaka")
             print(debug_text)
+
+            # Step 2: Main layout
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
+
+            # Step 3: Label inside ScrollView
             label = Label(
-                text=debug_text,
-                font_size=30,
-                color=(1, 1, 1, 1),  # white text
-                text_size=(self.root.width * 0.8, None),  # force wrapping
+                text=debug_text or "[no debug info found]",
+                font_size=20,
+                color=(1, 1, 1, 1),
                 halign='left',
                 valign='top',
-                size_hint_y=None
+                size_hint_y=None,
+                text_size=(self.root.width * 0.8, None)
             )
-            label.bind(texture_size=label.setter('size'))  # autosize vertically
-            box.add_widget(label)
+            label.bind(texture_size=label.setter('size'))
 
-            btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
+            scroll = ScrollView(size_hint=(1, 1))
+            scroll.add_widget(label)
+            box.add_widget(scroll)
 
-            copy_btn = Button(text='Copy', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=36)
+            # Step 4: Buttons row
+            btn_row = BoxLayout(size_hint=(1, 0.2), spacing=10)
+
+            copy_btn = Button(
+                text='Copy',
+                size_hint=(0.5, 1),
+                background_color=(0.2, 0.2, 0.2, 1),
+                font_size=20,
+                color=(1, 1, 1, 1)
+            )
             copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
 
-            close_btn = Button(text='Close', size_hint=(0.5, 0.5), background_color=(0.2, 0.2, 0.2, 1), font_size=36)
+            close_btn = Button(
+                text='Close',
+                size_hint=(0.5, 1),
+                background_color=(0.2, 0.2, 0.2, 1),
+                font_size=20,
+                color=(1, 1, 1, 1)
+            )
+            # popup ref needs to be defined above
+            popup = Popup(
+                title='',
+                content=box,
+                size_hint=(0.9, 0.8),
+                auto_dismiss=False,
+                background_color=(0.1, 0.1, 0.1, 0.95)
+            )
             close_btn.bind(on_press=lambda *a: popup.dismiss())
 
             btn_row.add_widget(copy_btn)
             btn_row.add_widget(close_btn)
-
             box.add_widget(btn_row)
 
-            # Create and open popup
-            popup = Popup(title='Debug Output',
-                          content=box,
-                          size_hint=(0.9, 0.5),
-                          auto_dismiss=True,
-                          background_color=(0.2, 0.2, 0.2, 1))
+            # Step 5: Open the popup
             popup.open()
+
         except Exception as e:
+            print(f"on_debug_press exception: {e}")
             Logger.error(f"DeadNet: on_debug_press failed - {e}")
 
     @staticmethod

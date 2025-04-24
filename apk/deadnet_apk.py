@@ -173,7 +173,7 @@ class DeadNetAPK:
                 self.start_workers_attack_loop()
 
             except Exception as e:
-                self.abort = traceback.format_exc()
+                self.abort = "Error in attack loop (check debug logs)"
                 Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
             except KeyboardInterrupt:
                 Logger.info("DeadNet: start_attack user_interrupt")
