@@ -93,11 +93,9 @@ def get_ipv6_gateway_via_proc_su(iface: str) -> str:
                 continue
             dest, dest_pref, _, _, gateway_hex, _, route_iface = parts[:7]
             if dest == '0' * 32 and dest_pref == '00' and route_iface == iface:
-                try:
-                    gw_addr = str(ipaddress.IPv6Address(gateway_hex.zfill(32)))
-                    return gw_addr
-                except ipaddress.AddressValueError:
-                    return None
+                gw_addr = str(ipaddress.IPv6Address(gateway_hex.zfill(32)))
+                return gw_addr
+        Logger.info(f"DeadNet: get_ipv6_gateway_via_proc_su error, cmd result - {success}")
     except Exception as e:
         Logger.error(f"DeadNet: get_gateway_ipv4 error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
