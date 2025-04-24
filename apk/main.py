@@ -86,10 +86,8 @@ class MainApp(MDApp):
                                f"Gateway MACaddr - {self._GATEWAY_HWDDR}"
             self.printf(setup_output)
 
-    def clear_output_label(self):
-        self.printf("")  # clear output
-
-    def set_ssid_name(self, ssid_name):
+    def set_ssid_name(self, ssid_name: str):
+        self.ssid_name = ssid_name
         self.root.ids.ssid_label.text = f"{YELLOW}{self.ssid_name}{COLOR_RESET}"
 
     def _has_ssid(self):

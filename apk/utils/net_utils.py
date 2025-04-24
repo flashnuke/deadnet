@@ -25,7 +25,7 @@ def get_device_mac_address_su(iface: str) -> str:
             return result.stdout.strip()
     except Exception as e:
         Logger.error(f"DeadNet: get_device_mac_address_su error {e} - {traceback.format_exc()}")
-    return ""
+    return ""  # TODO undefined?
 
 
 def get_ssid_name() -> str:

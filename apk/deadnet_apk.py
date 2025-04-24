@@ -9,20 +9,19 @@ import threading
 import platform as pt
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
-Logger.setLevel(LOG_LEVELS["info"]) # todo sort it
 
 from concurrent.futures import ThreadPoolExecutor
-
-
 from utils import *
-
+from scapy.all import *
 from android.permissions import request_permissions, Permission
 request_permissions([Permission.WRITE_EXTERNAL_STORAGE, Permission.INTERNET, Permission.ACCESS_WIFI_STATE,
                      Permission.ACCESS_NETWORK_STATE, Permission.ACCESS_FINE_LOCATION, Permission.CHANGE_WIFI_STATE])
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
-from scapy.all import *
-conf.verb = 0
+# todo is scapy even needed anymore?
+conf.verb = 0  # scapy conf
+Logger.setLevel(LOG_LEVELS["info"])  # todo sort it
+
 
 
 #   --------------------------------------------------------------------------------------------------------------------
