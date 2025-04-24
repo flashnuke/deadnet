@@ -16,10 +16,6 @@ from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
 
-from kivymd.uix.snackbar import MDSnackbar
-from kivymd.uix.label import MDLabel
-from kivy.metrics import dp
-
 
 from kivy.clock import Clock
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
@@ -220,26 +216,7 @@ class MainApp(MDApp):
 
     @staticmethod
     def _toast_msg(msg: str) -> None:
-        print("called toast")
-        MDSnackbar(
-            MDLabel(
-                text=msg,
-                theme_text_color="Custom",
-                text_color=(1, 1, 1, 1),
-                size_hint_x=1,
-                halign='center',
-                valign='center',
-                adaptive_height=True,
-            ),
-            bg_color=(0, 0, 0, 0.8),
-            duration=2,
-            pos_hint={'center_x': 0.5},
-            size_hint_x=0.9,
-            snackbar_y=dp(10),
-            radius=[16, 16, 16, 16],
-            elevation=6,
-        ).open()
-        # toast(msg, duration=2, background=[0, 0, 0, 0.7])  # todo check if neede to revert to 0.7
+        toast(msg, duration=2, background=[0, 0, 0, 1])  # todo check if neede to revert to 0.7
 
     def _is_deadnet_thread_active(self) -> bool:
         return self._deadnet_thread is not None and self._deadnet_thread.is_alive()
