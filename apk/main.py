@@ -14,7 +14,6 @@ from kivy.clock import Clock
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 
 from jnius import autoclass
-from scapy.all import *
 
 Logger.setLevel(LOG_LEVELS["info"])
 
@@ -136,7 +135,9 @@ class MainApp(MDApp):
         self._deadnet_thread.start()
 
     def on_stop_press(self):
-        Logger.info(f"historyyy: {LoggerHistory.history}") # todo hist
+        history = [msg for level, msg in LoggerHistory.history]
+        for msg in history:
+            Logger.info(f"historyyy: {msg}")  # todo hist
         Logger.error(f"testttt")
         Logger.info(f"gagagagaga")
 
