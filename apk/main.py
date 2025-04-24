@@ -110,6 +110,7 @@ class MainApp(MDApp):
             duration=1.5,  # duration in seconds
             bg_color=(0, 0, 0, 0.8)
         ).open()
+        return
         if not self._check_app_conditions(check_root=True, check_ssid=True):
             return
         if self._is_deadnet_thread_active():
