@@ -73,16 +73,16 @@ class DeadNetAPK:
         self._gateway_mac = gateway_mac
         self._gateway_mac_fake = generate_random_mac()
         Logger.info(f"Deadnet: Generated spoofed gateway mac {self._gateway_mac_fake}")
-        if not self._gateway_mac:
-            raise Exception(f"Unable to get gateway MAC address")
 
-        user_ipv4 = get_if_addr(self._network_interface)
-        Logger.info(f"DeadNet: user_ipv4 set to {self._user_ipv4}")
-        subnet_ipv4 = user_ipv4.split(".")[:3]
+        device_ipv4 = get_if_addr(self._network_interface)
+        if device_ipv4 == NET_UNDEFINED:
+            raise Exception(f"Unable to get device_ipv4")
+        Logger.info(f"DeadNet: device_ipv4 set to {self._device_ipv4}")
+        subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
         Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
-                            str(host_ip) != _user_ipv4 and str(host_ip) != self._gateway_ipv4]
+                            str(host_ip) != _device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
         self._intro = str()
         if self._spoof_ipv6ra:

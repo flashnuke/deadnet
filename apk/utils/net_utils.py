@@ -28,6 +28,17 @@ def get_device_mac_address_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
+def get_if_addr(iface: str) -> Optional[str]:
+    result = subprocess.run(['su', '-c', f'ip -4 addr show dev {iface}'],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    match = re.search(r'inet\s+(\d+\.\d+\.\d+\.\d+)', result.stdout)
+    if match:
+        return match.group(1)
+    else:
+        Logger.error(f"DeadNet: get_if_addr cmd missing match, result - {result}")
+    return NET_UNDEFINED
+
+
 def get_ssid_name() -> str:
     ssid_name = NET_UNDEFINED
     try:
@@ -60,8 +71,6 @@ def get_ipv6_with_su(iface: str) -> str:
         su_cmd = f"cat /proc/net/if_inet6"
         result = subprocess.run(['su', '-c', su_cmd], capture_output=True, text=True)
         Logger.info(f"DeadNet: get_ipv6_with_su cmd result - {result}")
-        if result.returncode != 0:
-            return NET_UNDEFINED
         for line in result.stdout.strip().splitlines():
             parts = line.strip().split()
             if parts[-1] == iface:
