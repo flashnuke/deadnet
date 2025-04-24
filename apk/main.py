@@ -16,7 +16,7 @@ from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
 from jnius import autoclass
 from scapy.all import *
 
-Logger.setLevel(LOG_LEVELS["error"])
+Logger.setLevel(LOG_LEVELS["info"])
 
 
 # todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
