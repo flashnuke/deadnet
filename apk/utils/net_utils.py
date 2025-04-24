@@ -83,21 +83,18 @@ def get_ipv6_with_su(iface: str) -> str:
     return NET_UNDEFINED
 
 
-def get_ipv6_gateway_via_proc_su(iface: str) -> str:
+def mac_to_ipv6_ll(mac: str) -> str:
     try:
-        result = subprocess.run(['su', '-c', 'cat /proc/net/ipv6_route'],
-                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-        for line in result.stdout.splitlines():
-            parts = line.split()
-            if len(parts) < 7:
-                continue
-            dest, dest_pref, _, _, gateway_hex, _, route_iface = parts[:7]
-            if dest == '0' * 32 and dest_pref == '00' and route_iface == iface:
-                gw_addr = str(ipaddress.IPv6Address(gateway_hex.zfill(32)))
-                return gw_addr
-        Logger.info(f"DeadNet: get_ipv6_gateway_via_proc_su error, cmd result - {result}")
+        parts = mac.split(':')
+        if len(parts) != 6:
+            raise ValueError(f"Invalid MAC: {mac}")
+        b = [int(p, 16) for p in parts]
+        b[0] ^= 0x02
+        eui64 = bytes(b[:3] + [0xFF, 0xFE] + b[3:])
+        ipv6_int = int.from_bytes(eui64, 'big') | (0xFE80000000000000 << 64)
+        return str(ipaddress.IPv6Address(ipv6_int))
     except Exception as e:
-        Logger.error(f"DeadNet: get_gateway_ipv4 error {e} - {traceback.format_exc()}")
+        Logger.error(f"DeadNet: mac_to_ipv6_ll error {e} - {traceback.format_exc()}")
     return NET_UNDEFINED
 
 
@@ -154,7 +151,7 @@ def init_gateway() -> Tuple[str, str, str, str]:
             raise Exception("unable to get iface_name")
         gateway_ipv4 = get_gateway_ipv4()
         gateway_hwaddr = get_gateway_mac(iface)
-        gateway_ipv6 = get_ipv6_gateway_via_proc_su(iface)
+        gateway_ipv6 = mac_to_ipv6_ll(gateway_hwaddr)
     except Exception as e:
         Logger.error(f"DeadNet: init_gateway error {e} - {traceback.format_exc()}")
 
