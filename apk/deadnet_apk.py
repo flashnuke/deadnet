@@ -39,7 +39,7 @@ class DeadNetAPK:
 
     def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
-        self._executor_sleep_interval = 0.1
+        self._executor_sleep_interval = 0.5
         self._max_workers = 3
 
         self._network_interface = iface
