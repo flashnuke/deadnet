@@ -14,8 +14,6 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.clipboard import Clipboard
-from kivy.uix.widget import Widget
-from kivy.graphics import Color, RoundedRectangle
 
 from kivy.clock import Clock
 from kivy.logger import Logger, LoggerHistory, LOG_LEVELS
@@ -163,61 +161,32 @@ class MainApp(MDApp):
 
     def on_debug_press(self):
         try:
-            debug_text = "self.generate_debug_text()"
-
-            # Root container for popup
+            debug_text = "test"
             box = BoxLayout(orientation='vertical', padding=20, spacing=20)
-
-            # Background dark theme using canvas
-            with box.canvas.before:
-                Color(0.1, 0.1, 0.1, 0.95)  # dark background
-                self._bg_rect = RoundedRectangle(radius=[20]) # todo bg rect define and comment
-            box.bind(pos=self._update_bg, size=self._update_bg)
-
-            # Debug message (use a label or TextInput if you want selection)
-            label = Label(text=debug_text, font_size=16, color=[1, 1, 1, 1])
+            label = Label(text=debug_text, font_size=18)
             box.add_widget(label)
 
-            # Buttons row
-            btn_row = BoxLayout(size_hint=(1, 0.2), spacing=10)
+            btn_row = BoxLayout(size_hint=(1, 0.3), spacing=10)
 
-            def styled_button(text, action):
-                btn = Button(text=text,
-                             size_hint=(0.5, 1),
-                             background_normal='',
-                             background_color=(0.2, 0.2, 0.2, 1),
-                             color=(1, 1, 1, 1),
-                             font_size=14)
-                btn.bind(on_press=action)
-                with btn.canvas.before:
-                    Color(0.2, 0.2, 0.2, 1)
-                    btn._bg = RoundedRectangle(radius=[12])
-                btn.bind(pos=lambda w, *a: setattr(btn._bg, 'pos', w.pos),
-                         size=lambda w, *a: setattr(btn._bg, 'size', w.size))
-                return btn
+            copy_btn = Button(text='Copy', size_hint=(0.5, 1), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            copy_btn.bind(on_press=lambda *a: Clipboard.copy(debug_text))
 
-            copy_btn = styled_button("Copy", lambda *a: Clipboard.copy(debug_text))
-            close_btn = styled_button("Close", lambda *a: popup.dismiss())
+            close_btn = Button(text='Close', size_hint=(0.5, 1), background_color=(0.2, 0.2, 0.2, 1), font_size=18)
+            close_btn.bind(on_press=lambda *a: popup.dismiss())
 
             btn_row.add_widget(copy_btn)
             btn_row.add_widget(close_btn)
+
             box.add_widget(btn_row)
 
-            # Popup definition
+            # Create and open popup
             popup = Popup(title='Debug Output',
                           content=box,
                           size_hint=(0.9, 0.5),
-                          auto_dismiss=False,
-                          separator_color=(0, 0, 0, 0),
-                          background='')  # Remove gray background
+                          auto_dismiss=False)
             popup.open()
-
         except Exception as e:
             Logger.error(f"DeadNet: open_debug_popup failed - {e}")
-
-    def _update_bg(self, instance, value):
-        self._bg_rect.pos = instance.pos
-        self._bg_rect.size = instance.size
 
     @staticmethod
     def _toast_msg(msg: str):
