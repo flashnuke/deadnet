@@ -168,13 +168,11 @@ class DeadNetAPK:
     def _kill_pid(pid: int):
         if pid is not None:
             try:
-                subprocess.Popen(
-                    ["su", "-c",
-                     f"kill -9 {pid}"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                Logger.info(f"DeadNet: SIGKILL was sent to{pid}")
+                res = subprocess.run(["su", "-c", f"kill -9 {pid}"],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     text=True)
+                Logger.info(f"DeadNet: SIGKILL was sent to {pid}, stdout: {res.stdout}, stderr: {res.stderr}")
             except Exception as e:
                 # todo add log here
                 Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
@@ -200,8 +198,14 @@ class DeadNetAPK:
         self._terminate_all_attacks()
 
     def _terminate_all_attacks(self):
-        for pid in [self._nra_proc_pid, self._arp_bcast_proc_pid, self._arp_ind_proc_pid]:
-            self._kill_pid(pid)
+        self._kill_pid(self._nra_proc_pid)
+        self._nra_proc_pid = None
+
+        self._kill_pid(self._arp_bcast_proc_pid)
+        self._arp_bcast_proc_pid = None
+
+        self._kill_pid(self._arp_ind_proc_pid)
+        self._arp_ind_proc_pid = None
 
     def start_attack(self) -> None:
         try:
