@@ -33,6 +33,7 @@ class MainApp(MDApp):
         # todo test functionality - final
         # todo test on unrooted phone - final
         # todo push compiled binaries - final
+        # todo push compiled apk - final
         # todo better docs and new pic in readme - final
 
         # todo - Logger 'DeadNet' prefix as a global variable
