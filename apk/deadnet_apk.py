@@ -169,7 +169,9 @@ class DeadNetAPK:
                     pass
                 self._arp_bcast_proc.wait()  # wait for it to actually exit
                 self._arp_bcast_proc = None
-
+        except Exception as e:
+            # todo add log here
+            pass
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
