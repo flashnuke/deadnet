@@ -159,15 +159,8 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        while not self._abort:
-            time.sleep(0.5)
-
-        self._terminate_ipv4_arp_bcast()
 
     def _terminate_ipv4_arp_bcast(self):
-
-        while not self._abort:
-            time.sleep(0.5)
         if self._arp_bcast_proc and self._arp_bcast_proc.poll() is None:
             self._arp_bcast_proc.terminate()  # SIGTERM
             try:
@@ -181,7 +174,7 @@ class DeadNetAPK:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
         #                  f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
         #                  shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # TODO add sleep
+        # TODO add sleep and loop
         self._nra_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
@@ -189,10 +182,6 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-
-
-
-        self._terminate_ipv6_nra_attack()
 
     def _terminate_ipv6_nra_attack(self):
         if self._nra_proc and self._nra_proc.poll() is None:
