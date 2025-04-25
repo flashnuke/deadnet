@@ -40,7 +40,8 @@ class DeadNetAPK:
 
     def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
-        self._arp_sleep_interval = 0.075
+        self._arp_sleep_attempt_interval = 0.075
+        self._arp_sleep_cycle_interval = 5
         self._nra_sleep_interval = 2
         self._loop_sleep_interval = 0.321
 
@@ -136,7 +137,8 @@ class DeadNetAPK:
         self._arp_bcast_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} "
-             f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._arp_sleep_interval}"],
+             f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._arp_sleep_attempt_interval}"
+             f" {self._arp_sleep_cycle_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True
