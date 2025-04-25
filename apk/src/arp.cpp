@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
             struct in_addr dst_ip;
             if (inet_pton(AF_INET, token, &dst_ip) == 1) {
                 // Set target fields
-                memcpy(arp.arp_tha, dst_mac, sizeof(arp.arp_tha));
+                memset(arp.arp_tha, 0x00, ETH_ALEN);
                 memcpy(&arp.arp_tpa, &dst_ip, sizeof(dst_ip));
                 memcpy(eh.ether_dhost, dst_mac, ETH_ALEN);
                 memcpy(sa.sll_addr, dst_mac, ETH_ALEN);
