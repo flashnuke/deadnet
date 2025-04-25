@@ -34,6 +34,7 @@ class MainApp(MDApp):
         # todo test on unrooted phone - final
         # todo better docs and new pic in readme - final
 
+        # todo - Logger 'DeadNet' prefix as a global variable
         # todo - try playing after u did stop?? sometimes it freezes altogether
 
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
@@ -140,6 +141,7 @@ class MainApp(MDApp):
     def on_debug_press(self) -> None:
         try:
             # Step 1: Get log messages
+            LoggerHistory.flush()
             history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
             history.reverse()
             debug_text = "\n============\n".join(history)

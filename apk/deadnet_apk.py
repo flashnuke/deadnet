@@ -8,7 +8,7 @@ import threading
 import platform as pt
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
-Logger.setLevel(LOG_LEVELS["info"])
+Logger.setLevel(LOG_LEVELS["info"]) # todo remove here and in net utils?
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
@@ -83,7 +83,7 @@ class DeadNetAPK:
         subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
         Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
-        Logger.error(f"DeadNet: err subnet_ipv4_sr set to {subnet_ipv4_sr}") # todo remove
+        Logger.error(f"DeadNet: err subnet_ipv4_sr set to {subnet_ipv4_sr}")  # todo remove
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
@@ -139,7 +139,7 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
-        Logger.info(f"Deadnet: started arp ind attack proc_id {self._arp_ind_proc_pid}")
+        Logger.info(f"DeadNet: started arp ind attack proc_id {self._arp_ind_proc_pid}")
 
     def _ipv4_arp_bcast_attack(self) -> None:
         self._arp_bcast_proc_pid = subprocess.Popen(
@@ -149,8 +149,7 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
-        Logger.info(f"Deadnet: started arp bcast attack proc_id {self._arp_bcast_proc_pid}")
-
+        Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc_pid}")
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
@@ -164,17 +163,17 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
-        Logger.info(f"Deadnet: started nra attack proc_id {self._nra_proc_pid}")
+        Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc_pid}")
 
     @staticmethod
     def _kill_pid(pid: int):
         if pid is not None:
             try:
                 os.kill(pid, signal.SIGKILL)
-                Logger.info(f"Deadnet: SIGKILL was sent to{pid}")
+                Logger.info(f"DeadNet: SIGKILL was sent to{pid}")
             except Exception as e:
                 # todo add log here
-                Logger.error(f"Deadnet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
+                Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
