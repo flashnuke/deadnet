@@ -148,7 +148,7 @@ class DeadNetAPK:
                 self._arp_ind_proc = None
         except Exception as e:
             # todo add log here
-            pass
+            Logger.error(f"unable to kill ipv4_arp_ind: {e} - {traceback.format_exc()}")
 
     def _ipv4_arp_bcast_attack(self) -> None:
         self._arp_bcast_proc = subprocess.Popen(
@@ -171,7 +171,7 @@ class DeadNetAPK:
                 self._arp_bcast_proc = None
         except Exception as e:
             # todo add log here
-            pass
+            Logger.error(f"unable to kill ipv4_arp_bcast: {e} - {traceback.format_exc()}")
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
@@ -198,7 +198,7 @@ class DeadNetAPK:
                 self._nra_proc = None
         except Exception as e:
             # todo add log here
-            pass
+            Logger.error(f"unable to kill nra_proc: {e} - {traceback.format_exc()}")
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
