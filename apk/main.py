@@ -32,6 +32,7 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         # todo test functionality - final
         # todo test on unrooted phone - final
+        # todo push compiled binaries - final
         # todo better docs and new pic in readme - final
 
         # todo - Logger 'DeadNet' prefix as a global variable
