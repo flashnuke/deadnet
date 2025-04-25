@@ -201,6 +201,7 @@ class DeadNetAPK:
         #             return
         #         executor.submit(self._worker_attack_task, idx, ip)
         Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
+        # todo add elapsed time
 
         #self._ipv4_arp_ind_attack()
         self._ipv4_arp_bcast_attack()
