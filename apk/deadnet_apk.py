@@ -181,7 +181,7 @@ class DeadNetAPK:
         self._nra_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
-             f"{_ipv6_preflen} {self._executor_sleep_interval}"],
+             f"{self._ipv6_preflen} {self._executor_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -215,6 +215,7 @@ class DeadNetAPK:
         self._ipv6_nra_attack()
 
         while not self._abort:
+            # todo try raise exc here and see if we handle it correctly
             time.sleep(0.5)
 
         self._terminate_all_attacks()
