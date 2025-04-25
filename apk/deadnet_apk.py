@@ -40,7 +40,9 @@ class DeadNetAPK:
     def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
         self._executor_sleep_interval = 0.5
-        self._max_workers = 3
+        self._max_workers = 3 # todo remove
+
+        self._arp_ind_proc_pid = self._arp_bcast_proc_pid = self._nra_proc_pid = None
 
         self._network_interface = iface
 
@@ -160,11 +162,12 @@ class DeadNetAPK:
 
     @staticmethod
     def _kill_pid(pid: int):
-        try:
-            os.kill(pid)
-        except Exception as e:
-            # todo add log here
-            Logger.error(f"unable to kill {pid}: {e} - {traceback.format_exc()}")
+        if pid is not None:
+            try:
+                os.kill(pid)
+            except Exception as e:
+                # todo add log here
+                Logger.error(f"unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
@@ -187,7 +190,7 @@ class DeadNetAPK:
         self._terminate_all_attacks()
 
     def _terminate_all_attacks(self):
-        for pid in [self._nra_proc_pid, self._arp_bcast_proc_pid, self._arp_inv_proc_pid]:
+        for pid in [self._nra_proc_pid, self._arp_bcast_proc_pid, self._arp_ind_proc_pid]:
             self._kill_pid(pid)
 
     def start_attack(self) -> None:
