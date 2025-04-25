@@ -139,6 +139,7 @@ class DeadNetAPK:
              f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._arp_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            start_new_session=True
         )
         Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc.pid}")
 
@@ -149,6 +150,7 @@ class DeadNetAPK:
              f"{self._ipv6_preflen} {self._network_interface} {self._nra_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            start_new_session=True
         )
         Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
 
@@ -157,7 +159,7 @@ class DeadNetAPK:
         if proc is not None:
             pid = proc.pid
             try:
-                res = subprocess.run(["su", "-c", f"kill -9 {pid}"],
+                res = subprocess.run(["su", "-c", f"kill -KILL -- -{pid}"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      text=True)
