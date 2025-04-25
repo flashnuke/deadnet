@@ -108,8 +108,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 // set spoofed MAC in Ethernet and ARP
-                memcpy(eh.ether_shost, rand_mac, ETH_ALEN);
-                memcpy(arp.arp_sha,    rand_mac, ETH_ALEN);
+                //memcpy(eh.ether_shost, rand_mac, ETH_ALEN);
+                memcpy(arp.arp_sha, rand_mac, ETH_ALEN);
 
                 // Set target fields
                 memset(arp.arp_tha, 0x00, ETH_ALEN);
