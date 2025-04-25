@@ -27,8 +27,8 @@ int parse_mac(const char *str, unsigned char *bytes) {
 }
 
 int main(int argc, char *argv[]) {
-    // args: <iface> <source IP> <source MAC> <dest IP list> <dest MAC> <attacker MAC> <sleep_sec_a> <sleep_sec_c>
-    if (argc != 9) {
+    // args: <iface> <source IP> <source MAC> <dest IP list> <dest MAC> <attacker MAC> <sleep_sec>
+    if (argc != 8) {
         return EXIT_FAILURE;
     }
 
@@ -38,8 +38,7 @@ int main(int argc, char *argv[]) {
     const char *dst_list     = argv[4];  // comma-separated list of destination IPs
     const char *dst_mac_str  = argv[5];
     const char *att_mac_str  = argv[6];
-    double sleep_sec_a         = atof(argv[7]);  // seconds between each send attempt
-    double sleep_sec_c         = atof(argv[8]);  // seconds between each full cycle
+    double sleep_sec         = atof(argv[7]);  // seconds between each send cycle
 
     unsigned char src_mac[6], dst_mac[6], att_mac[6];
     if (parse_mac(src_mac_str, src_mac) ||
@@ -126,10 +125,10 @@ int main(int argc, char *argv[]) {
                 if (sendto(sock, buffer, frame_len, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {}
             }
             token = strtok(NULL, ",");
-            usleep((useconds_t)(sleep_sec_a * 1e6));
+            usleep((useconds_t)(sleep_sec * 1e6));
         }
         free(list_copy);
-        usleep((useconds_t)(sleep_sec_c * 1e6));
+        usleep((useconds_t)(5 * 1e6));
 
     }
 
