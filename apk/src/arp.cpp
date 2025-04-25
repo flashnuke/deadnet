@@ -106,11 +106,9 @@ int main(int argc, char *argv[]) {
                 if (sendto(sock, buffer, frame_len, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {}
             }
             token = strtok(NULL, ",");
-            usleep((useconds_t)(sleep_sec * 1e6));
         }
         free(list_copy);
-
-        // Sleep before next cycle
+        usleep((useconds_t)(sleep_sec * 1e6));
     }
 
     close(sock);
