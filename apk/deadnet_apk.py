@@ -200,8 +200,7 @@ class DeadNetAPK:
         #         if self._abort:
         #             return
         #         executor.submit(self._worker_attack_task, idx, ip)
-        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET} cycle #{self._loop_count} "
-                                                      f"{GRAY}[{idx + 1} / {len(self._host_ipv4s)}]{COLOR_RESET}"))
+        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
 
         #self._ipv4_arp_ind_attack()
         self._ipv4_arp_bcast_attack()
