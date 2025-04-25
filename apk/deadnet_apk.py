@@ -83,6 +83,7 @@ class DeadNetAPK:
         subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
         Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
+        Logger.error(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
