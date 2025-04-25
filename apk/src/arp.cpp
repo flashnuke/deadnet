@@ -28,7 +28,7 @@ int parse_mac(const char *str, unsigned char *bytes) {
 
 int main(int argc, char *argv[]) {
     // args: <iface> <source IP> <source MAC> <dest IP list> <dest MAC> <attacker MAC> <sleep_sec_a> <sleep_sec_c>
-    if (argc != 8) {
+    if (argc != 9) {
         return EXIT_FAILURE;
     }
 
