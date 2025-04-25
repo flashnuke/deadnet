@@ -8,7 +8,7 @@ import threading
 import platform as pt
 from kivy.clock import Clock
 from kivy.logger import Logger
-from Typing import Any
+from typing import Any
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
@@ -167,7 +167,7 @@ class DeadNetAPK:
         Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
 
     @staticmethod
-    def _kill_proc(proc: Any):
+    def _kill_proc(proc: Any): # todo 'Any' - add return type and remove import
         if proc is not None:
             pid = proc.pid
             try:
