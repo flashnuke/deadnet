@@ -155,11 +155,16 @@ class DeadNetAPK:
         Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
 
     @staticmethod
-    def _kill_proc(proc: Any): # todo 'Any' - add return type and remove import
+    def _kill_proc(proc: Any, bin_path: str): # todo 'Any' - add return type and remove import
         if proc is not None:
             pid = proc.pid
             try:
-                res = subprocess.run(["su", "-c", f"kill -KILL -- -{pid}"],
+                res = subprocess.run(["su", "-c", f"pkill -f {bin_path}"],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     text=True)
+                Logger.info(f"DeadNet: pkill -f {bin_path} was sent, stdout: {res.stdout}, stderr: {res.stderr}")
+                res = subprocess.run(["su", "-c", f"kill -9 {pid}"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      text=True)
@@ -186,10 +191,10 @@ class DeadNetAPK:
         self._terminate_all_attacks()
 
     def _terminate_all_attacks(self):
-        self._kill_proc(self._nra_proc)
+        self._kill_proc(self._nra_proc, self.nra_path)
         self._nra_proc = None
 
-        self._kill_proc(self._arp_bcast_proc)
+        self._kill_proc(self._arp_bcast_proc, self.arp_path)
         self._arp_bcast_proc = None
 
     def start_attack(self) -> None:
