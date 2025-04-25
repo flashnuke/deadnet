@@ -8,6 +8,7 @@
 #include <netpacket/packet.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <fcntl.h>   // for O_RDONLY
 
 #define ETH_HDR_LEN sizeof(struct ether_header)
 #define ARP_PKT_LEN sizeof(struct ether_arp)
@@ -92,6 +93,24 @@ int main(int argc, char *argv[]) {
         while (token) {
             struct in_addr dst_ip;
             if (inet_pton(AF_INET, token, &dst_ip) == 1) {
+                // generate a new random spoofed MAC each iteration
+                unsigned char rand_mac[6];
+                int fd = open("/dev/urandom", O_RDONLY);
+                if (fd >= 0) {
+                    read(fd, rand_mac, 6);
+                    close(fd);
+                    // set local-admin, unicast bit
+                    rand_mac[0] |=  0x02;
+                    rand_mac[0] &= ~0x01;
+                } else {
+                    for (int i = 0; i < 6; i++) {
+                        rand_mac[i] = (unsigned char)(rand() & 0xFF);
+                    }
+                }
+                // set spoofed MAC in Ethernet and ARP
+                memcpy(eh.ether_shost, rand_mac, ETH_ALEN);
+                memcpy(arp.arp_sha,    rand_mac, ETH_ALEN);
+
                 // Set target fields
                 memset(arp.arp_tha, 0x00, ETH_ALEN);
                 memcpy(&arp.arp_tpa, &dst_ip, sizeof(dst_ip));
