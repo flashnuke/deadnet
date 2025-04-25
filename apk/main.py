@@ -141,7 +141,6 @@ class MainApp(MDApp):
     def on_debug_press(self) -> None:
         try:
             # Step 1: Get log messages
-            LoggerHistory.flush()
             history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
             history.reverse()
             debug_text = "\n============\n".join(history)

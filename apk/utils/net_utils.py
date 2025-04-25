@@ -6,9 +6,8 @@ import subprocess
 
 from typing import Tuple
 from jnius import autoclass
-from kivy.logger import Logger, LOG_LEVELS
+from kivy.logger import Logger
 from functools import lru_cache
-Logger.setLevel(LOG_LEVELS["info"])
 
 NET_UNDEFINED = "null"
 

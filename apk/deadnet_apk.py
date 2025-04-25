@@ -1,14 +1,14 @@
 import os
 import re
 import time
+import signal
 import logging
 import ipaddress
 import subprocess
 import threading
 import platform as pt
 from kivy.clock import Clock
-from kivy.logger import Logger, LOG_LEVELS
-Logger.setLevel(LOG_LEVELS["info"]) # todo remove here and in net utils?
+from kivy.logger import Logger
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
@@ -159,7 +159,7 @@ class DeadNetAPK:
         self._nra_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
-             f"{self._ipv6_preflen} {self._executor_sleep_interval}"],
+             f"{self._ipv6_preflen} {self._network_interface} {self._executor_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
