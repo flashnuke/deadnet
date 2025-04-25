@@ -17,11 +17,8 @@ struct nd_opt_slla {
 };
 
 int main(int argc, char* argv[]) {
-    // now expect 7 args: hwaddr, src_ip, prefix, prefix_len, iface, sleep_sec
+    // 7 args: hwaddr, src_ip, prefix, prefix_len, iface, sleep_sec
     if (argc != 7) {
-        std::cerr << "Usage: " << argv[0]
-                  << " <slla MAC> <src IPv6> <prefix IPv6> <prefix_len>"
-                  << " <iface> <sleep_seconds>\n";
         return 1;
     }
 
@@ -36,12 +33,10 @@ int main(int argc, char* argv[]) {
     // build raw IPv6 socket
     int sock = socket(PF_INET6, SOCK_RAW, IPPROTO_RAW);
     if (sock < 0) {
-        perror("socket");
         return 1;
     }
     if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
                    iface, std::strlen(iface)) < 0) {
-        perror("SO_BINDTODEVICE");
         close(sock);
         return 1;
     }
@@ -138,7 +133,6 @@ int main(int argc, char* argv[]) {
     while (1) {
         if (sendto(sock, packet, packet_len, 0,
                    (struct sockaddr*)&dest_addr, sizeof(dest_addr)) < 0) {
-            perror("sendto");
         }
         usleep(sleep_us);
     }

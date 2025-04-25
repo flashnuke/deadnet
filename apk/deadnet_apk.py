@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import signal
 import logging
 import ipaddress
 import subprocess
@@ -169,7 +168,12 @@ class DeadNetAPK:
     def _kill_pid(pid: int):
         if pid is not None:
             try:
-                os.kill(pid, signal.SIGKILL)
+                subprocess.Popen(
+                    ["su", "-c",
+                     f"kill -9 {pid}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
                 Logger.info(f"DeadNet: SIGKILL was sent to{pid}")
             except Exception as e:
                 # todo add log here
