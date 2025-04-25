@@ -8,6 +8,7 @@ import threading
 import platform as pt
 from kivy.clock import Clock
 from kivy.logger import Logger
+from Typing import Any
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
