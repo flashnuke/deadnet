@@ -164,7 +164,7 @@ class DeadNetAPK:
     def _kill_pid(pid: int):
         if pid is not None:
             try:
-                os.kill(pid)
+                os.kill(pid, signal.SIGKILL)
             except Exception as e:
                 # todo add log here
                 Logger.error(f"unable to kill {pid}: {e} - {traceback.format_exc()}")
