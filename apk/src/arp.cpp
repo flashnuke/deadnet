@@ -106,11 +106,11 @@ int main(int argc, char *argv[]) {
                 }
             }
             token = strtok(NULL, ",");
+            usleep((useconds_t)(sleep_sec * 1e6));
         }
         free(list_copy);
 
         // Sleep before next cycle
-        usleep((useconds_t)(sleep_sec * 1e6));
     }
 
     close(sock);
