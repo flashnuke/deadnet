@@ -8,7 +8,7 @@ import threading
 import platform as pt
 from kivy.clock import Clock
 from kivy.logger import Logger
-from typing import Any
+from typing import Union
 
 from concurrent.futures import ThreadPoolExecutor
 from utils import *
@@ -42,9 +42,10 @@ class DeadNetAPK:
         self._spoof_ipv6ra_interval = 5
         self._arp_sleep_interval = 0.075
         self._nra_sleep_interval = 2
-        self._loop_sleep_interval = 0.5
+        self._loop_sleep_interval = 0.321
 
-        self._arp_bcast_proc = self._nra_proc = None  # todo typing
+        self._arp_bcast_proc: Union[None, subprocess.Popen] = None
+        self._nra_proc: Union[None, subprocess.Popen] = None
 
         self._network_interface = iface
 
@@ -84,7 +85,6 @@ class DeadNetAPK:
         subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
         Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
-        Logger.error(f"DeadNet: err subnet_ipv4_sr set to {subnet_ipv4_sr}")  # todo remove
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
@@ -155,7 +155,7 @@ class DeadNetAPK:
         Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
 
     @staticmethod
-    def _kill_proc(proc: Any, bin_path: str): # todo 'Any' - add return type and remove import
+    def _kill_proc(proc: Union[None, subprocess.Popen], bin_path: str):
         if proc is not None:
             pid = proc.pid
             try:
@@ -172,21 +172,17 @@ class DeadNetAPK:
                 proc.wait()
                 Logger.info(f"DeadNet: {pid} reaped")
             except Exception as e:
-                # todo add log here
                 Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_attack_loop(self) -> None:
-        # todo add elapsed time
-
         self._ipv4_arp_bcast_attack()
         self._ipv6_nra_attack()
 
         start = time.time()
         while not self._abort:
-            # todo try raise exc here and see if we handle it correctly
-            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}\n"
-                                                          f"time elapsed - {round(time.time() - start, 2)}[s]"))
-            time.sleep(self._loop_sleep_interval)  # todo into var
+            Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}Status - {GREEN}running...{COLOR_RESET}\n"
+                                                          f"Seconds elapsed - {round(time.time() - start, 2)}"))
+            time.sleep(self._loop_sleep_interval)
 
         self._terminate_all_attacks()
 

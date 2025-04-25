@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     sa.sll_ifindex  = ifindex;
     sa.sll_halen    = ETH_ALEN;
 
-    unsigned char buffer[BUF_SIZE];
+    unsigned char buffer[ETH_ZLEN] = {0};
 
     // Endless loop: iterate over each IP in list, send, then sleep
     while (1) {
@@ -101,8 +101,9 @@ int main(int argc, char *argv[]) {
                 // Send ARP reply
                 memcpy(buffer, &eh, sizeof(eh));
                 memcpy(buffer + sizeof(eh), &arp, sizeof(arp));
-                if (sendto(sock, buffer, sizeof(buffer), 0,
-                           (struct sockaddr*)&sa, sizeof(sa)) < 0) {
+
+                size_t frame_len = sizeof(buffer);  // 60
+                if (sendto(sock, buffer, frame_len, 0, (struct sockaddr*)&sa, sizeof(sa)) < 0) {
                 }
             }
             token = strtok(NULL, ",");
