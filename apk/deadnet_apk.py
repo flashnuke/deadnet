@@ -171,7 +171,7 @@ class DeadNetAPK:
         if pid is not None:
             try:
                 os.kill(pid, signal.SIGKILL)
-                Logger.error(f"Deadnet: SIGKILL was sent to{pid}")
+                Logger.info(f"Deadnet: SIGKILL was sent to{pid}")
             except Exception as e:
                 # todo add log here
                 Logger.error(f"Deadnet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
@@ -183,12 +183,12 @@ class DeadNetAPK:
         #         if self._abort:
         #             return
         #         executor.submit(self._worker_attack_task, idx, ip)
-        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
         # todo add elapsed time
 
         #self._ipv4_arp_ind_attack()
         self._ipv4_arp_bcast_attack()
         self._ipv6_nra_attack()
+        Clock.schedule_once(lambda dt: self.print_mtd(f"{self._intro}status - {GREEN}running...{COLOR_RESET}"))
 
         while not self._abort:
             # todo try raise exc here and see if we handle it correctly
@@ -202,9 +202,7 @@ class DeadNetAPK:
 
     def start_attack(self) -> None:
         try:
-            self._loop_count += 1
             self._start_workers_attack_loop()
-
         except Exception as e:
             self._abort = "Error in attack loop (check debug logs)"
             Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
