@@ -137,6 +137,7 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
+        Logger.info(f"Deadnet: started arp ind attack proc_id {self._arp_ind_proc_pid}")
 
     def _ipv4_arp_bcast_attack(self) -> None:
         self._arp_bcast_proc_pid = subprocess.Popen(
@@ -146,6 +147,8 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
+        Logger.info(f"Deadnet: started arp bcast attack proc_id {self._arp_bcast_proc_pid}")
+
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
@@ -159,6 +162,7 @@ class DeadNetAPK:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
+        Logger.info(f"Deadnet: started nra attack proc_id {self._nra_proc_pid}")
 
     @staticmethod
     def _kill_pid(pid: int):
@@ -167,7 +171,7 @@ class DeadNetAPK:
                 os.kill(pid, signal.SIGKILL)
             except Exception as e:
                 # todo add log here
-                Logger.error(f"unable to kill {pid}: {e} - {traceback.format_exc()}")
+                Logger.error(f"Deadnet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
