@@ -128,6 +128,8 @@ int main(int argc, char *argv[]) {
             usleep((useconds_t)(sleep_sec * 1e6));
         }
         free(list_copy);
+        usleep((useconds_t)(10 * 1e6));
+
     }
 
     close(sock);
