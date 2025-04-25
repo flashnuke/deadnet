@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     const char *dst_mac_str  = argv[5];
     const char *att_mac_str  = argv[6];
     double sleep_sec_a         = atof(argv[7]);  // seconds between each send attempt
-    double sleep_sec_c         = atof(argv[7]);  // seconds between each full cycle
+    double sleep_sec_c         = atof(argv[8]);  // seconds between each full cycle
 
     unsigned char src_mac[6], dst_mac[6], att_mac[6];
     if (parse_mac(src_mac_str, src_mac) ||
