@@ -136,20 +136,19 @@ class DeadNetAPK:
             stderr=subprocess.DEVNULL,
         )
 
-        while not self._abort:
-            time.sleep(0.5)
-
-        self._terminate_ipv4_arp_ind()
-
     def _terminate_ipv4_arp_ind(self):
-        if self._arp_ind_proc and self._arp_ind_proc.poll() is None:
-            self._arp_ind_proc.terminate()  # SIGTERM
-            try:
-                self._arp_ind_proc.kill()   # SIGKILL
-            except Exception as e:
-                pass
-            self._arp_ind_proc.wait()  # wait for it to actually exit
-            self._arp_ind_proc = None
+        try:
+            if self._arp_ind_proc and self._arp_ind_proc.poll() is None:
+                self._arp_ind_proc.terminate()  # SIGTERM
+                try:
+                    self._arp_ind_proc.kill()   # SIGKILL
+                except Exception as e:
+                    pass
+                self._arp_ind_proc.wait()  # wait for it to actually exit
+                self._arp_ind_proc = None
+        except Exception as e:
+            # todo add log here
+            pass
 
     def _ipv4_arp_bcast_attack(self) -> None:
         self._arp_bcast_proc = subprocess.Popen(
@@ -161,14 +160,16 @@ class DeadNetAPK:
         )
 
     def _terminate_ipv4_arp_bcast(self):
-        if self._arp_bcast_proc and self._arp_bcast_proc.poll() is None:
-            self._arp_bcast_proc.terminate()  # SIGTERM
-            try:
-                self._arp_bcast_proc.kill()   # SIGKILL
-            except Exception as e:
-                pass
-            self._arp_bcast_proc.wait()  # wait for it to actually exit
-            self._arp_bcast_proc = None
+        try:
+            if self._arp_bcast_proc and self._arp_bcast_proc.poll() is None:
+                self._arp_bcast_proc.terminate()  # SIGTERM
+                try:
+                    self._arp_bcast_proc.kill()   # SIGKILL
+                except Exception as e:
+                    pass
+                self._arp_bcast_proc.wait()  # wait for it to actually exit
+                self._arp_bcast_proc = None
+
 
     def _ipv6_nra_attack(self) -> None:
         # subprocess.Popen(f"su -c {self.nra_path} {self._gateway_mac} {self._gateway_ipv6} "
@@ -184,14 +185,18 @@ class DeadNetAPK:
         )
 
     def _terminate_ipv6_nra_attack(self):
-        if self._nra_proc and self._nra_proc.poll() is None:
-            self._nra_proc.terminate()  # SIGTERM
-            try:
-                self._nra_proc.kill()   # SIGKILL
-            except Exception as e:
-                pass
-            self._nra_proc.wait()  # wait for it to actually exit
-            self._nra_proc = None
+        try:
+            if self._nra_proc and self._nra_proc.poll() is None:
+                self._nra_proc.terminate()  # SIGTERM
+                try:
+                    self._nra_proc.kill()   # SIGKILL
+                except Exception as e:
+                    pass
+                self._nra_proc.wait()  # wait for it to actually exit
+                self._nra_proc = None
+        except Exception as e:
+            # todo add log here
+            pass
 
     def _start_workers_attack_loop(self) -> None:
         # todo rename method name
@@ -229,11 +234,8 @@ class DeadNetAPK:
             Logger.info("DeadNet: start_attack user_interrupt")
             self.user_abort()
 
-        try:
-            # try terminating in case last time was interrupted by an exception
-            self._terminate_all_attacks()
-        except Exception as e:
-            pass
+        # try terminating in case last time was interrupted by an exception
+        self._terminate_all_attacks()
 
         if self._abort != self._user_abort_reason:
             Clock.schedule_once(lambda dt: self.print_mtd(f"{self._abort}"))
