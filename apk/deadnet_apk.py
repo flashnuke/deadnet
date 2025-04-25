@@ -7,7 +7,7 @@ import subprocess
 import threading
 import platform as pt
 from kivy.clock import Clock
-from kivy.logger import Logger
+from kivy.logger import Logger, LOG_LEVELS
 Logger.setLevel(LOG_LEVELS["info"])
 
 from concurrent.futures import ThreadPoolExecutor
