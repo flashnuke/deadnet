@@ -57,10 +57,10 @@ class MainApp(MDApp):
             subprocess.call(["su"])  # test root
             return True
         except (PermissionError, FileNotFoundError):
-            Logger.error(f"DeadNet: _try_root missing root")
+            Logger.error(f"{DEADNET_PREF}: _try_root missing root")
             pass
         except Exception as e:
-            Logger.error(f"DeadNet: _try_root exception {e} traceback {traceback.format_exc()}")
+            Logger.error(f"{DEADNET_PREF}: _try_root exception {e} traceback {traceback.format_exc()}")
         return False
 
     def _check_app_conditions(self, check_root: bool, check_ssid: bool) -> bool:
@@ -106,7 +106,7 @@ class MainApp(MDApp):
             import webbrowser
             webbrowser.open(self.GH_URL)
         except Exception as e:
-            Logger.error(f"DeadNet: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
+            Logger.error(f"{DEADNET_PREF}: on_ref_credit_press exception {e} when opening {self.GH_URL} traceback {traceback.format_exc()}")
 
     def on_start_press(self) -> None:
         if not self._check_app_conditions(check_root=True, check_ssid=True):
@@ -144,7 +144,7 @@ class MainApp(MDApp):
     def on_debug_press(self) -> None:
         try:
             # Step 1: Get log messages
-            history = [record.msg for record in LoggerHistory.history if "DeadNet:" in record.msg]
+            history = [record.msg for record in LoggerHistory.history if f"{DEADNET_PREF}:" in record.msg]
             history.reverse()
             debug_text = "\n============\n".join(history)
             print(debug_text)
@@ -200,7 +200,7 @@ class MainApp(MDApp):
             popup.open()
 
         except Exception as e:
-            Logger.error(f"DeadNet: on_debug_press failed - {e}, traceback {traceback.format_exc()}")
+            Logger.error(f"{DEADNET_PREF}: on_debug_press failed - {e}, traceback {traceback.format_exc()}")
 
     def do_attack(self) -> None:
         with self._abort_lck:
@@ -211,7 +211,7 @@ class MainApp(MDApp):
                                                     self._GATEWAY_IPV4, self._GATEWAY_IPV6, self._GATEWAY_HWDDR,
                                                     self.printf)
             except Exception as e:
-                Logger.error(f"DeadNet: Exception {e} when starting attack, traceback: {traceback.format_exc()}")
+                Logger.error(f"{DEADNET_PREF}: Exception {e} when starting attack, traceback: {traceback.format_exc()}")
                 self.printf(f"error during setup -> {e}")
                 return
         self._deadnet_thread = threading.Thread(target=self._deadnet_instance.start_attack, daemon=True)
