@@ -54,7 +54,7 @@ class DeadNetAPK:
         self._my_mac = get_device_mac_address_su(self._network_interface)
         if self._my_mac == NET_UNDEFINED:
             raise Exception("Failed to get device MAC address")
-        Logger.info(f"DeadNet: Set up user mac as {self._my_mac}")
+        Logger.info(f"{DEADNET_PREF}: Set up user mac as {self._my_mac}")
         self._loop_count = 0
 
         self._abort = str()
@@ -62,7 +62,7 @@ class DeadNetAPK:
 
         arch_type = self._BINARY_MAP.get(pt.machine())
         if not arch_type:
-            Logger.info(f"DeadNet: Unsupported device machine architecture {pt.machine()}")
+            Logger.info(f"{DEADNET_PREF}: Unsupported device machine architecture {pt.machine()}")
             raise Exception(f"Unsupported device machine architecture -> {pt.machine()}")
 
         if not self._prepare_binaries(arch_type):
@@ -72,20 +72,20 @@ class DeadNetAPK:
         self._ipv6_prefix, self._ipv6_preflen = get_ipv6_prefdata(self._network_interface) if self._gateway_ipv6 != NET_UNDEFINED else (None, None)
 
         self._spoof_ipv6ra = self._ipv6_prefix and self._ipv6_preflen
-        Logger.info(f"DeadNet: spoof_ipv6ra set to {self._spoof_ipv6ra}")
+        Logger.info(f"{DEADNET_PREF}: spoof_ipv6ra set to {self._spoof_ipv6ra}")
 
         self._gateway_ipv4 = gateway_ipv4
         self._gateway_mac = gateway_mac
         self._gateway_mac_fake = generate_random_mac()
-        Logger.info(f"Deadnet: Generated spoofed gateway mac {self._gateway_mac_fake}")
+        Logger.info(f"{DEADNET_PREF}: Generated spoofed gateway mac {self._gateway_mac_fake}")
 
         device_ipv4 = get_if_addr(self._network_interface)
         if device_ipv4 == NET_UNDEFINED:
             raise Exception(f"Unable to get device_ipv4")
-        Logger.info(f"DeadNet: device_ipv4 set to {device_ipv4}")
+        Logger.info(f"{DEADNET_PREF}: device_ipv4 set to {device_ipv4}")
         subnet_ipv4 = device_ipv4.split(".")[:3]
         subnet_ipv4_sr = f"{'.'.join(subnet_ipv4)}.0/24"  # assuming CIDR length is 24
-        Logger.info(f"DeadNet: subnet_ipv4_sr set to {subnet_ipv4_sr}")
+        Logger.info(f"{DEADNET_PREF}: subnet_ipv4_sr set to {subnet_ipv4_sr}")
         self._host_ipv4s = [str(host_ip) for host_ip in ipaddress.IPv4Network(subnet_ipv4_sr) if
                             str(host_ip) != device_ipv4 and str(host_ip) != self._gateway_ipv4]
 
@@ -119,10 +119,10 @@ class DeadNetAPK:
                 subprocess.run(f"su -c 'chmod 777 {dest_path}'", shell=True, check=True)
                 subprocess.run(f"su -c 'chown root {dest_path}'", shell=True, check=True)
 
-            Logger.info("DeadNet: Binaries copied and permissions set successfully")
+            Logger.info("{DEADNET_PREF}: Binaries copied and permissions set successfully")
             return True
         except Exception as e:
-            Logger.error(f"DeadNet: Unexpected error - {e}, traceback: {traceback.format_exc()}")
+            Logger.error(f"{DEADNET_PREF}: Unexpected error - {e}, traceback: {traceback.format_exc()}")
         return False
 
     def user_abort(self) -> None:
@@ -143,7 +143,7 @@ class DeadNetAPK:
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        Logger.info(f"DeadNet: started arp bcast attack proc_id {self._arp_bcast_proc.pid}")
+        Logger.info(f"{DEADNET_PREF}: started arp bcast attack proc_id {self._arp_bcast_proc.pid}")
 
     def _ipv6_nra_attack(self) -> None:
         self._nra_proc = subprocess.Popen(
@@ -154,7 +154,7 @@ class DeadNetAPK:
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        Logger.info(f"DeadNet: started nra attack proc_id {self._nra_proc.pid}")
+        Logger.info(f"{DEADNET_PREF}: started nra attack proc_id {self._nra_proc.pid}")
 
     @staticmethod
     def _kill_proc(proc: Union[None, subprocess.Popen], bin_path: str):
@@ -165,16 +165,16 @@ class DeadNetAPK:
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      text=True)
-                Logger.info(f"DeadNet: pkill -f {bin_path} was sent, stdout: {res.stdout}, stderr: {res.stderr}")
+                Logger.info(f"{DEADNET_PREF}: pkill -f {bin_path} was sent, stdout: {res.stdout}, stderr: {res.stderr}")
                 res = subprocess.run(["su", "-c", f"kill -9 {pid}"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      text=True)
-                Logger.info(f"DeadNet: SIGKILL was sent to {pid}, stdout: {res.stdout}, stderr: {res.stderr}")
+                Logger.info(f"{DEADNET_PREF}: SIGKILL was sent to {pid}, stdout: {res.stdout}, stderr: {res.stderr}")
                 proc.wait()
-                Logger.info(f"DeadNet: {pid} reaped")
+                Logger.info(f"{DEADNET_PREF}: {pid} reaped")
             except Exception as e:
-                Logger.error(f"DeadNet: Unable to kill {pid}: {e} - {traceback.format_exc()}")
+                Logger.error(f"{DEADNET_PREF}: Unable to kill {pid}: {e} - {traceback.format_exc()}")
 
     def _start_attack_loop(self) -> None:
         self._ipv4_arp_bcast_attack()
@@ -200,9 +200,9 @@ class DeadNetAPK:
             self._start_attack_loop()
         except Exception as e:
             self._abort = "Error in attack loop (check debug logs)"
-            Logger.error(f"DeadNet: start_attack exception - {e}, traceback: {traceback.format_exc()}")
+            Logger.error(f"{DEADNET_PREF}: start_attack exception - {e}, traceback: {traceback.format_exc()}")
         except KeyboardInterrupt:
-            Logger.info("DeadNet: start_attack user_interrupt")
+            Logger.info("{DEADNET_PREF}: start_attack user_interrupt")
             self.user_abort()
 
         # try terminating in case last time was interrupted by an exception
