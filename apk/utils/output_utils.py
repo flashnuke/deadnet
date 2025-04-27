@@ -1,4 +1,6 @@
-# Markup definitions
+# output utils
+
+DEADNET_PREF = 'DeadNet'
 
 RED = '[color=#D10000]'
 BLUE = '[color=#4D4FFF]'
