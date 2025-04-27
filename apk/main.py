@@ -29,6 +29,7 @@ class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
+        # todo add buildozer version in spec
         # todo new screenshot both apk and logo of main - final
         # todo test functionality - final
         # todo test on unrooted phone - final
