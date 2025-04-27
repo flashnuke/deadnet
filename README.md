@@ -44,6 +44,12 @@ Beware that if running from a VM, the network should be set to `Bridged`
 scapy~=2.4.5
 ```
 # Usage
+## Installation
+```bash
+git clone https://github.com/flashnuke/deadnet.git
+cd deadnet
+pip3 install -r requirements.txt
+```
 
 ## Poisoning ARP Cache (IPv4)
 The network interface is a mandatory param and should always be passed, for example (`eth0` is the most commonly used in kali): 
