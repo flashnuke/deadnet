@@ -39,7 +39,7 @@ The only difference would be in the output, which in LINUX OS would refresh the 
 Beware that if running from a VM, the network should be set to `Bridged`
 
 ### Dependencies
-3rd party libraries can be installed by running the following command: `pip3 install -r requirements.txt` as they are listed inside the requirements file:
+3rd party libraries can be installed by running the following command: `pip install -r requirements.txt` as they are listed inside the requirements file:
 ```python
 scapy~=2.4.5
 ```
@@ -48,7 +48,7 @@ scapy~=2.4.5
 ```bash
 git clone https://github.com/flashnuke/deadnet.git
 cd deadnet
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Poisoning ARP Cache (IPv4)
