@@ -119,7 +119,7 @@ class DeadNetAPK:
                 subprocess.run(f"su -c 'chmod 777 {dest_path}'", shell=True, check=True)
                 subprocess.run(f"su -c 'chown root {dest_path}'", shell=True, check=True)
 
-            Logger.info("{DEADNET_PREF}: Binaries copied and permissions set successfully")
+            Logger.info(f"{DEADNET_PREF}: Binaries copied and permissions set successfully")
             return True
         except Exception as e:
             Logger.error(f"{DEADNET_PREF}: Unexpected error - {e}, traceback: {traceback.format_exc()}")
@@ -202,7 +202,7 @@ class DeadNetAPK:
             self._abort = "Error in attack loop (check debug logs)"
             Logger.error(f"{DEADNET_PREF}: start_attack exception - {e}, traceback: {traceback.format_exc()}")
         except KeyboardInterrupt:
-            Logger.info("{DEADNET_PREF}: start_attack user_interrupt")
+            Logger.info(f"{DEADNET_PREF}: start_attack user_interrupt")
             self.user_abort()
 
         # try terminating in case last time was interrupted by an exception
