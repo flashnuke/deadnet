@@ -6,17 +6,17 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/ap
 </br>The attack itself is run is written in C++ and compiled into native binaries that are run explicitly by the Python app (see the `Notes.Permissions` section for more).
 
 # Requirements
-* Device must be rooted
-* Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
+* Device must be rooted.
+* Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly.
 
 # Usage
-* Grant permissions
-* Use the buttons - `Start`, `Stop` and `Refresh` (to refresh the current wifi connection info)
-* In case of an error, use the `Debug Logs` button to fetch the logs, and feel free to open an issue for me! I will be happy to understand what went wrong
+* Grant permissions.
+* Use the buttons - `Start`, `Stop` and `Refresh` (to refresh the current wifi connection info).
+* In case of an error, use the `Debug Logs` button to fetch the logs, and feel free to open an issue for me! I will be happy to understand what went wrong.
 
 ### Permissions
-* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root)
-* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name)
+* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root).
+* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name).
 
 # Building manually
 Steps to build the app manually. </br>
@@ -52,7 +52,7 @@ $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android29-clang++
 $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/arp.cpp
 ```
 
-The compiled binaries will be stored under `./assets`
+The compiled binaries will be stored under `./assets`.
 
 ### Building the APK
 ```bash
@@ -69,7 +69,14 @@ source venv/bin/activate
 # build the apk 
 buildozer android debug # build in debug mode
 ```
-The compiled APK will be stored under `./bin`
+The compiled APK will be stored under `./bin`.
+
+# Debugging
+### Debug Logs
+Quick debugging can be done using the `Debug Logs` button, which will display useful logs. </br>
+### ADB logcat
+If a more thorough debug process is needed, `adb` is the right for that. </br>
+Connecting the device to ADB and running `adb logcat` would show all the logs, which can be filtered further by using `adb logcat | grep -E 'python|DeadNet'`.
 
 # Disclaimer
 
