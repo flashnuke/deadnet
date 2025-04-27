@@ -25,11 +25,11 @@ from jnius import autoclass
 Logger.setLevel(LOG_LEVELS["info"])
 
 
-# todo note: pc - use bridged not nat, executor, more stable to get gateway, python interpretr no permissiosn therefore C++... etc...
 class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
+        # todo new screenshot both apk and logo of main - final
         # todo test functionality - final
         # todo test on unrooted phone - final
         # todo push compiled binaries - final
