@@ -31,9 +31,14 @@ An Android APP designed to run Deadnet directly on rooted devices using a simple
 See [the APK section](https://github.com/flashnuke/deadnet/tree/main/apk) for more.
 
 # Requirements
+### OS
 Works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
 
+### VM
+Beware that if running from a VM, the network should be set to `Bridged`
+
+### Dependencies
 3rd party libraries can be installed by running the following command: `pip3 install -r requirements.txt` as they are listed inside the requirements file:
 ```python
 scapy~=2.4.5
