@@ -9,24 +9,35 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/ap
 * Device must be rooted
 * Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
 
+# Usage
+* Grant permissions
+* Use the buttons - `Start`, `Stop` and `Refresh` (to refresh the current wifi connection info)
+* In case of an error, use the `Debug Logs` button to fetch the logs, and feel free to open an issue for me! I will be happy to understand what went wrong
 
-# Building 
+### Permissions
+* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root)
+* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name)
+
+# Building manually
 Steps to build the app manually. </br>
 The following tools are required:
-* NDK tools
 * Buildozer and Kivy library
+* NDK tools
+
+### Cloning the library
+```bash
+# clone the project
+git clone https://github.com/flashnuke/deadnet.git
+```
 
 ### Compiling the C++ Binaries
 The C++ binaries source code files (`src/arp.cpp` for the ARP poisoning and `src/nra.cpp` for the dead router attack) should be compiled by NDK:
 ```bash
-# after cloning
-
-
+cd /tmp  # DO NOT CLONE NDK INTO THE PROJECT DIRECTORY! it will mess with the build process
 mkdir android-ndk && cd android-ndk
 wget https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
 unzip android-ndk-r26d-linux.zip
-export NDK_PATH=$(pwd)/android-ndk-r26d
-
+export NDK_PATH=$(pwd)/android-ndk-r26d # NDK_PATH example: "NDK_PATH=/tmp/my-android-toolchain"
 
 # compile binaries
 cd <path_to_deadnet_root>/apk
@@ -39,24 +50,26 @@ $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clan
 $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi29-clang++ -static -o assets/arp.arm src/arp.cpp
 $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android29-clang++ -static -o assets/arp.x86 src/arp.cpp
 $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang++ -static -o assets/arp.x86_64 src/arp.cpp
-
-
-# NDK_PATH example: "NDK_PATH=/home/ubuntu/my-android-toolchain"
 ```
+
+The compiled binaries will be stored under `./assets`
 
 ### Building the APK
-
 ```bash
-cd deadnet/apk
+# navigate to the apk directory
+cd <path_to_deadnet_root>/apk
+
+# make sure you have python 3.10 installed
+python3.10 --version
+python3.10 -m venv venv
+source venv/bin/activate
+
+# install buildozer - refer to ths official for more https://buildozer.readthedocs.io/en/latest/installation.html
+
+# build the apk 
 buildozer android debug # build in debug mode
 ```
-The compiled APK will be stored in `./bin`
-
-# Notes
-### Permissions
-* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root)
-* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name)
-
+The compiled APK will be stored under `./bin`
 
 # Disclaimer
 
