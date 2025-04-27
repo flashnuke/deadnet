@@ -3,14 +3,14 @@
 A simple GUI that runs Deadnet directly on Android devices. </br> </br>
 
 The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/apk/bin) directory, but it can be built manually as well.
-</br>The code that is supposed to open network sockets and send the spoofed packets is written in C++ and compiled into native binaries that are run explicitly by the Python app.
+</br>The attack itself is run is written in C++ and compiled into native binaries that are run explicitly by the Python app (see the `Notes.Permissions` section for more).
 
 # Requirements
 * Device must be rooted
 * Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly
 
 
-# Building
+# Building 
 Steps to build the app manually. </br>
 The following tools are required:
 * NDK tools
@@ -45,10 +45,12 @@ $NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang
 ```
 
 ### Building the APK
+
 ```bash
 cd deadnet/apk
 buildozer android debug # build in debug mode
 ```
+The compiled APK will be stored in `./bin`
 
 # Notes
 ### Permissions
