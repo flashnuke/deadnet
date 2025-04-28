@@ -8,7 +8,7 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/ap
 
 # Requirements
 * Device must be rooted.
-* Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type and modify the code accordingly.
+* Most modern devices are ARM64. The native binaries are compiled for the following machine architecture types: (ARM, ARM64, x86, x86_64), see the building section in order to compile for a different architecture type.
 
 # Usage
 * Grant permissions.
