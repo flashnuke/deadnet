@@ -25,21 +25,32 @@ I have a separate project for that [here](https://github.com/flashnuke/wifi-deau
 If no credentials are present and you insist on using Deadnet, it's possible to run a dictionary-attack using a [wordlist](https://github.com/flashnuke/pass-generator) in combination with another tool that cracks Wifi handshakes to gain credentials first.
 
 # Android APP
-<p align="center"><img src="https://github.com/user-attachments/assets/4282d5bb-c8b0-4081-a5d8-3b33800eadaa" width="450" ></p>
+<p align="center"><img src="https://github.com/user-attachments/assets/c85eccf8-bbf8-4904-9327-9e1c2e064eea" width="450" ></p>
 
 
 An Android APP designed to run Deadnet directly on rooted devices using a simple GUI with a couple of buttons. </br>
 See [the APK section](https://github.com/flashnuke/deadnet/tree/main/apk) for more.
 
 # Requirements
+### OS
 Works on every OS. </br>
 The only difference would be in the output, which in LINUX OS would refresh the same line to log updates rather than printing new lines in other operating systems.
 
-3rd party libraries can be installed by running the following command: `pip3 install -r requirements.txt` as they are listed inside the requirements file:
+### VM
+Beware that if running from a VM, the network should be set to `Bridged`
+
+### Dependencies
+3rd party libraries can be installed by running the following command: `pip install -r requirements.txt` as they are listed inside the requirements file:
 ```python
 scapy~=2.4.5
 ```
 # Usage
+## Installation
+```bash
+git clone https://github.com/flashnuke/deadnet.git
+cd deadnet
+pip install -r requirements.txt
+```
 
 ## Poisoning ARP Cache (IPv4)
 The network interface is a mandatory param and should always be passed, for example (`eth0` is the most commonly used in kali): 

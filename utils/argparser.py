@@ -31,7 +31,7 @@ def define_args():
 
     parser.add_argument("-6", "--disable-ipv6", dest='disable_ipv6', action="store_true",
                         default=False, help="disable IPv6 dead router attack"
-                                           " (enabled by default)", required=False)
+                                            " (enabled by default)", required=False)
 
     parser.add_argument("-p", "--set-preflen", dest='preflen', type=int, metavar=(""), default=_DEF_PREFLEN,
                         help=f"set the prefix length of the IPv6 subnet (default -> {_DEF_PREFLEN})",

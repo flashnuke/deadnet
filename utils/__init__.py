@@ -1,5 +1,5 @@
 from .argparser import *
 from .defines import *
-from .methods import *
+from .misc_utils import *
 from .output_manager import *
 
