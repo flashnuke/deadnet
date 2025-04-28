@@ -1,9 +1,10 @@
 # Deadnet APK
-<p align="center"><img src="https://github.com/flashnuke/deadnet/assets/59119926/fbb72f10-764c-4272-aa8c-8623f34b8ba2" width="350" ></p>
-A simple GUI that runs Deadnet directly on Android devices. </br> </br>
+<p align="center"><img src="https://github.com/user-attachments/assets/c85eccf8-bbf8-4904-9327-9e1c2e064eea" width="450" ></p>
 
-The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/apk/bin) directory, but it can be built manually as well.
-</br>The attack itself is run is written in C++ and compiled into native binaries that are run explicitly by the Python app (see the `Notes.Permissions` section for more).
+A simple Android app that runs Deadnet directly on Android devices. </br> </br>
+
+The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/apk/bin) directory, but can be built manually as well.
+</br>The attack is written in C++ and compiled into native binaries that are run explicitly by the Python app (see the `Notes.Permissions` section for more). </br>
 
 # Requirements
 * Device must be rooted.
