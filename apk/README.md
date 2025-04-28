@@ -13,17 +13,17 @@ The APK is stored inside [bin](https://github.com/flashnuke/deadnet/tree/main/ap
 # Usage
 * Grant permissions.
 * Use the buttons - `Start`, `Stop` and `Refresh` (to refresh the current wifi connection info).
-* In case of an error, use the `Debug Logs` button to fetch the logs, and feel free to open an issue for me! I will be happy to understand what went wrong.
+* In case of an error, use the `Debug Logs` button to fetch the logs, and feel free to open a new [issue](https://github.com/flashnuke/deadnet/issues) with the debug logs included.
 
 ### Permissions
-* Some parts were compiled into native binaries due to lack of permissions to open raw sockets by the Python interpreter on Android (even when root).
-* `ACCESS_FINE_LOCATION` permission is requested in order to access the SSID (wifi network name).
+* Some parts were compiled into native binaries due to a lack of permissions that restrict the Python interpreter from directly creating raw sockets, even when running as root.
+* `ACCESS_FINE_LOCATION` permission is required in order to access SSID data (i.e. wifi network name).
 
 # Building manually
 Steps to build the app manually. </br>
 The following tools are required:
-* Buildozer and Kivy library
-* NDK tools
+* NDK tools (to build the `.cpp` binaries)
+* Buildozer (to build the APK)
 
 ### Cloning the library
 ```bash
