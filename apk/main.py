@@ -29,16 +29,12 @@ class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
-        # todo add buildozer version in spec
         # todo new screenshot both apk and logo of main - final
         # todo test functionality - final
         # todo test on unrooted phone - final
         # todo push compiled binaries - final
         # todo push compiled apk - final
         # todo better docs and new pic in readme - final
-
-        # todo - Logger 'DeadNet' prefix as a global variable
-        # todo - try playing after u did stop?? sometimes it freezes altogether
 
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
