@@ -29,13 +29,6 @@ class MainApp(MDApp):
     GH_URL = "https://github.com/flashnuke"
 
     def __init__(self, **kwargs):
-        # todo new screenshot both apk and logo of main - final
-        # todo test functionality - final
-        # todo test on unrooted phone - final
-        # todo push compiled binaries - final
-        # todo push compiled apk - final
-        # todo better docs and new pic in readme - final
-
         self._GATEWAY_IPV4 = self._GATEWAY_IPV6 = self._GATEWAY_HWDDR = self._IFACE = self.ssid_name = \
             NET_UNDEFINED
 
@@ -232,7 +225,7 @@ class MainApp(MDApp):
     def on_start(self) -> None:
         # on app start
         if not self._check_app_conditions(check_root=True, check_ssid=False):
-            err_msg = f"{RED}Error{COLOR_RESET}: Device is not rooted!"
+            err_msg = f"{RED}Error: Device is not rooted{COLOR_RESET}"
             self.printf(err_msg)
         else:
             self.setup_network_data()
