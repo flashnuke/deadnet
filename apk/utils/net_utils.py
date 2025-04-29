@@ -71,7 +71,8 @@ def get_net_iface_name() -> str:
                 fallback_result = subprocess.run(['su', '-c', 'cat /proc/net/wireless'], capture_output=True, text=True)
                 Logger.info(f"{DEADNET_PREF}: get_net_iface_name cmd 'cat /proc/net/wireless' result - {fallback_result}")
                 lines = fallback_result.stdout.splitlines()
-                for line in lines[2:]: # skip headers (first 2 lines)
+                for line in lines[2:]:  # skip headers (first 2 lines)
+                    break
                     if line.strip():
                         parts = line.split()
                         if len(parts) >= 3:
@@ -90,7 +91,7 @@ def get_net_iface_name() -> str:
 
     except Exception as e:
         Logger.error(f"{DEADNET_PREF}: get_net_iface_name error {e} - {traceback.format_exc()}")
-    Logger.info(f"{DEADNET_PREF}: get_net_iface_name failed, returning default {IFACE_DEFAULT_NAME}")
+    Logger.info(f"{DEADNET_PREF}: get_net_iface_name failed, returning default name '{IFACE_DEFAULT_NAME}'")
     return IFACE_DEFAULT_NAME
 
 
