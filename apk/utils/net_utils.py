@@ -12,6 +12,7 @@ from functools import lru_cache
 from .output_utils import DEADNET_PREF
 
 NET_UNDEFINED = "null"
+IFACE_DEFAULT_NAME = "wlan0"
 
 
 def is_unknown_ssid(ssid: str) -> bool:
@@ -35,8 +36,7 @@ def get_device_mac_address_su(iface: str) -> str:
 
 @lru_cache(maxsize=10)
 def get_if_addr(iface: str) -> str:
-    result = subprocess.run(['su', '-c', f'ip -4 addr show dev {iface}'],
-                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    result = subprocess.run(['su', '-c', f'ip -4 addr show dev {iface}'], capture_output=True, text=True)
     match = re.search(r'inet\s+(\d+\.\d+\.\d+\.\d+)', result.stdout)
     if match:
         return match.group(1)
@@ -60,16 +60,38 @@ def get_ssid_name() -> str:
 
 def get_net_iface_name() -> str:
     try:
-        result = subprocess.run(['getprop'], capture_output=True, text=True)
-        match = re.search(r'\[wifi.interface\]: \[(.*?)\]', result.stdout)
-        if match:
-            Logger.info(f"{DEADNET_PREF}: get_net_iface_name cmd result success")  # avoid printing if match - too much spam
-            return match.group(1)
-        else:
-            Logger.error(f"{DEADNET_PREF}: get_net_iface_name cmd missing match, result - {result}")
+        result = subprocess.run(['su', '-c', 'getprop wifi.interface'], capture_output=True, text=True)
+        Logger.info(f"{DEADNET_PREF}: get_net_iface_name cmd getprop result - {result}")
+        iface_name = result.stdout.strip()
+        if False: #iface_name:
+            return iface_name
+        else:  # fallback: parse /proc/net/wireless
+            Logger.error(f"{DEADNET_PREF}: getprop cmd failed, trying fallback...")
+            try:
+                fallback_result = subprocess.run(['su', '-c', 'cat /proc/net/wireless'], capture_output=True, text=True)
+                Logger.info(f"{DEADNET_PREF}: get_net_iface_name cmd 'cat /proc/net/wireless' result - {fallback_result}")
+                lines = fallback_result.stdout.splitlines()
+                for line in lines[2:]: # skip headers (first 2 lines)
+                    if line.strip():
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            iface = parts[0].strip(':').strip()
+                            status = parts[2]
+                            try:
+                                status_val = float(status)
+                                if status_val > 0:  # has some link quality (traffic)
+                                    Logger.info(f"{DEADNET_PREF}: fallback iface detected - {iface}")
+                                    return iface
+                            except ValueError:
+                                continue
+
+            except Exception as fallback_err:
+                Logger.error(f"{DEADNET_PREF}: error during fallback parsing /proc/net/wireless {fallback_err}")
+
     except Exception as e:
         Logger.error(f"{DEADNET_PREF}: get_net_iface_name error {e} - {traceback.format_exc()}")
-    return NET_UNDEFINED
+    Logger.info(f"{DEADNET_PREF}: get_net_iface_name failed, returning default {IFACE_DEFAULT_NAME}")
+    return IFACE_DEFAULT_NAME
 
 
 @lru_cache(maxsize=10)
