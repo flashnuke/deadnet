@@ -79,6 +79,12 @@ The default (and most commonly used) IPv6 preflen is `64`, in order to set a dif
 If the following exception occurs: ```Errno 105 No Buffer Space Available```
 simply increase the buffer size by running this command -> `sudo ifconfig <net_interface> txqueuelen 100000` where `net_interface` is the network interface name. </br>
 
+## ☕ Support
+
+Found DeadNet useful? A coffee is always appreciated and helps me keep building tools like this.
+
+[![Support Me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/flashnuke)
+
 # Disclaimer
 
 This tool is only for testing and can only be used where strict consent has been given. Do not use it for illegal purposes! It is the end user’s responsibility to obey all applicable local, state and federal laws. I assume no liability and am not responsible for any misuse or damage caused by this tool and software.
